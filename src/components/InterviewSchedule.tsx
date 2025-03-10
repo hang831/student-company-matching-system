@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Clock } from "lucide-react";
-import { InterviewSlot } from "@/types";
+import { InterviewSlot, Student, Company } from "@/types";
 
 const InterviewSchedule = () => {
   const { companies, students, slots, bookInterviewSlot, getStudentById } = useInternshipSystem();
@@ -39,11 +39,92 @@ const InterviewSchedule = () => {
     }
   };
 
+  // Create a matrix representation of the schedule for visualization
+  const scheduleMatrix = () => {
+    // Filter for only booked slots
+    const bookedSlots = slots.filter(slot => slot.booked);
+    
+    // Skip if we don't have any booked slots or companies or students
+    if (bookedSlots.length === 0 || companies.length === 0 || students.length === 0) {
+      return null;
+    }
+    
+    // Format for table cell display: {slotId: {date, time}}
+    const formatSlotTime = (slot: InterviewSlot) => {
+      return {
+        date: format(new Date(slot.date), "MMM d"),
+        time: `${slot.startTime} - ${slot.endTime}`
+      };
+    };
+    
+    // Create data structure for matrix: {studentId: {companyId: slotInfo}}
+    const matrix: Record<string, Record<string, {date: string, time: string}>> = {};
+    
+    // Initialize matrix with all students and companies
+    students.forEach(student => {
+      matrix[student.id] = {};
+    });
+    
+    // Fill in booked slots
+    bookedSlots.forEach(slot => {
+      if (slot.studentId && slot.companyId) {
+        if (!matrix[slot.studentId]) {
+          matrix[slot.studentId] = {};
+        }
+        matrix[slot.studentId][slot.companyId] = formatSlotTime(slot);
+      }
+    });
+    
+    return (
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Interview Schedule Matrix</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[150px]">Student</TableHead>
+                  {companies.map(company => (
+                    <TableHead key={company.id}>{company.name}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {students.map(student => (
+                  <TableRow key={student.id}>
+                    <TableCell className="font-medium">{student.name}</TableCell>
+                    {companies.map(company => {
+                      const slotInfo = matrix[student.id]?.[company.id];
+                      return (
+                        <TableCell key={company.id} className={slotInfo ? "bg-orange-100" : ""}>
+                          {slotInfo ? (
+                            <div className="text-xs">
+                              <div>{slotInfo.date}</div>
+                              <div>{slotInfo.time}</div>
+                            </div>
+                          ) : null}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold tracking-tight">Interview Schedule</h2>
       </div>
+
+      {scheduleMatrix()}
 
       {Object.entries(slotsByDate).map(([dateStr, daySlots]) => (
         <Card key={dateStr} className="mb-6">

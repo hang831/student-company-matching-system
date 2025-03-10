@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Company, Student, InterviewSlot, StudentPreference } from "@/types";
+import { Company, Student, InterviewSlot, StudentPreference, CompanyImportData, StudentImportData } from "@/types";
 import { mockCompanies, mockStudents, interviewSlots } from "@/data/mockData";
 import { toast } from "@/hooks/use-toast";
 
@@ -82,6 +82,66 @@ export const useInternshipSystem = () => {
     toast({
       title: "Company deleted",
       description: "The company and all its associated data have been removed.",
+    });
+  };
+
+  // Add student
+  const addStudent = (student: Omit<Student, "id" | "preferences" | "bookedInterviews">) => {
+    const newStudent: Student = {
+      ...student,
+      id: `s${Date.now()}`,
+      preferences: [],
+      bookedInterviews: [],
+    };
+    setStudents([...students, newStudent]);
+    toast({
+      title: "Student added",
+      description: `${student.name} has been added successfully.`,
+    });
+  };
+
+  // Delete student
+  const deleteStudent = (studentId: string) => {
+    // First, remove all bookings associated with this student
+    const studentBookedSlotIds = slots.filter(slot => slot.studentId === studentId).map(slot => slot.id);
+    
+    // Update companies that had slots booked by this student
+    setCompanies(
+      companies.map(company => ({
+        ...company,
+        availableSlots: company.availableSlots.map(slot => {
+          if (slot.studentId === studentId) {
+            return {
+              ...slot,
+              booked: false,
+              studentId: undefined
+            };
+          }
+          return slot;
+        })
+      }))
+    );
+    
+    // Update slots to remove the student ID and set as not booked
+    setSlots(
+      slots.map(slot => {
+        if (slot.studentId === studentId) {
+          return {
+            ...slot,
+            booked: false,
+            studentId: undefined
+          };
+        }
+        return slot;
+      })
+    );
+    
+    // Remove the student
+    setStudents(students.filter(student => student.id !== studentId));
+    
+    toast({
+      title: "Student deleted",
+      description: "The student and all associated preferences have been removed.",
     });
   };
 
@@ -357,30 +417,27 @@ export const useInternshipSystem = () => {
     return companies.find((company) => company.id === companyId);
   };
 
-  // Auto-assign interviews based on student preferences
-  const autoAssignInterviews = () => {
-    const sortedStudents = [...students].sort((a, b) => a.id.localeCompare(b.id));
+  // Import companies from CSV data
+  const importCompanies = (companyDataList: CompanyImportData[]) => {
+    const newCompanies = companyDataList.map(companyData => ({
+      ...companyData,
+      id: `c${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      availableSlots: []
+    }));
     
-    for (const student of sortedStudents) {
-      const sortedPreferences = [...student.preferences].sort((a, b) => a.rank - b.rank);
-      
-      for (const preference of sortedPreferences) {
-        const company = getCompanyById(preference.companyId);
-        if (!company) continue;
-        
-        const availableSlots = getAvailableSlotsForCompany(company.id);
-        
-        if (availableSlots.length > 0) {
-          bookInterviewSlot(availableSlots[0].id, student.id);
-          break;
-        }
-      }
-    }
+    setCompanies([...companies, ...newCompanies]);
+  };
+  
+  // Import students from CSV data
+  const importStudents = (studentDataList: StudentImportData[]) => {
+    const newStudents = studentDataList.map(studentData => ({
+      ...studentData,
+      id: `s${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      preferences: [],
+      bookedInterviews: []
+    }));
     
-    toast({
-      title: "Auto-assignment complete",
-      description: "Interviews have been automatically assigned based on preferences.",
-    });
+    setStudents([...students, ...newStudents]);
   };
 
   return {
@@ -390,6 +447,8 @@ export const useInternshipSystem = () => {
     addCompany,
     updateCompany,
     deleteCompany,
+    addStudent,
+    deleteStudent,
     updateStudent,
     addTimeslot,
     removeTimeslot,
@@ -398,7 +457,8 @@ export const useInternshipSystem = () => {
     getAvailableSlotsForCompany,
     getStudentById,
     getCompanyById,
-    autoAssignInterviews,
     toggleSlotAvailability,
+    importCompanies,
+    importStudents
   };
 };

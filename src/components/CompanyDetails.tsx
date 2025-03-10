@@ -115,6 +115,46 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
                 }
               />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="interviewPlace">Interview Place</Label>
+              <Input
+                id="interviewPlace"
+                value={editedCompany.interviewPlace || ""}
+                onChange={(e) =>
+                  handleInputChange('interviewPlace', e.target.value)
+                }
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="contactPerson">Contact Person</Label>
+              <Input
+                id="contactPerson"
+                value={editedCompany.contactPerson || ""}
+                onChange={(e) =>
+                  handleInputChange('contactPerson', e.target.value)
+                }
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="allowance">Allowance</Label>
+              <Input
+                id="allowance"
+                value={editedCompany.allowance || ""}
+                onChange={(e) =>
+                  handleInputChange('allowance', e.target.value)
+                }
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="remarks">Remarks</Label>
+              <Input
+                id="remarks"
+                value={editedCompany.remarks || ""}
+                onChange={(e) =>
+                  handleInputChange('remarks', e.target.value)
+                }
+              />
+            </div>
           </TabsContent>
           
           <TabsContent value="timeslots">

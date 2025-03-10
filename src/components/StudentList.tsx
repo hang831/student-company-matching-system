@@ -3,19 +3,29 @@ import { useState } from "react";
 import { useInternshipSystem } from "@/hooks/useInternshipSystem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Star, IdCard, Phone, BookOpen } from "lucide-react";
+import { User, Star, IdCard, Phone, BookOpen, Plus, Edit, Trash } from "lucide-react";
 import { Student } from "@/types";
 
 const StudentList = () => {
-  const { students, companies, addStudentPreference, updateStudent } = useInternshipSystem();
+  const { students, companies, addStudentPreference, updateStudent, addStudent, deleteStudent } = useInternshipSystem();
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [editedStudent, setEditedStudent] = useState<Student | null>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
+  const [newStudent, setNewStudent] = useState({
+    name: "",
+    email: "",
+    studentId: "",
+    tel: "",
+    gpa: "",
+  });
   
   const handlePreferenceChange = (companyId: string, rank: number) => {
     if (selectedStudent) {
@@ -55,10 +65,99 @@ const StudentList = () => {
     }
   };
 
+  const handleAddStudent = () => {
+    if (newStudent.name && newStudent.email && newStudent.studentId) {
+      addStudent(newStudent);
+      setNewStudent({
+        name: "",
+        email: "",
+        studentId: "",
+        tel: "",
+        gpa: "",
+      });
+      setIsAddDialogOpen(false);
+    }
+  };
+
+  const handleDeleteStudent = () => {
+    if (studentToDelete) {
+      deleteStudent(studentToDelete.id);
+      setStudentToDelete(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold tracking-tight">Students</h2>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Student
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Student</DialogTitle>
+              <DialogDescription>Complete the form to add a new student.</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  value={newStudent.name}
+                  onChange={(e) =>
+                    setNewStudent({ ...newStudent, name: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newStudent.email}
+                  onChange={(e) =>
+                    setNewStudent({ ...newStudent, email: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="studentId">Student ID</Label>
+                <Input
+                  id="studentId"
+                  value={newStudent.studentId}
+                  onChange={(e) =>
+                    setNewStudent({ ...newStudent, studentId: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="tel">Telephone</Label>
+                <Input
+                  id="tel"
+                  value={newStudent.tel}
+                  onChange={(e) =>
+                    setNewStudent({ ...newStudent, tel: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="gpa">GPA</Label>
+                <Input
+                  id="gpa"
+                  value={newStudent.gpa}
+                  onChange={(e) =>
+                    setNewStudent({ ...newStudent, gpa: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+            <Button onClick={handleAddStudent}>Add Student</Button>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -66,7 +165,6 @@ const StudentList = () => {
           <Card 
             key={student.id} 
             className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => setSelectedStudent(student)}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xl font-medium">{student.name}</CardTitle>
@@ -100,17 +198,60 @@ const StudentList = () => {
                   ) : null;
                 })}
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-4 w-full"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEdit(student);
-                }}
-              >
-                Edit Details
-              </Button>
+              <div className="flex space-x-2 mt-4">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-red-500 hover:text-red-700"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setStudentToDelete(student);
+                      }}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete the student "{student.name}" and all associated preferences.
+                        This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel onClick={() => setStudentToDelete(null)}>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDeleteStudent} className="bg-red-500 hover:bg-red-700">
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEdit(student);
+                  }}
+                >
+                  <Edit className="h-4 w-4 mr-1" /> Edit Details
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedStudent(student);
+                  }}
+                >
+                  <Star className="h-4 w-4 mr-1" /> Set Preferences
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}

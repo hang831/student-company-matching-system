@@ -20,6 +20,10 @@ const CompanyList = () => {
     name: "",
     description: "",
     intakeNumber: 1,
+    interviewPlace: "",
+    contactPerson: "",
+    allowance: "",
+    remarks: ""
   });
 
   const handleAddCompany = () => {
@@ -29,6 +33,10 @@ const CompanyList = () => {
         name: "",
         description: "",
         intakeNumber: 1,
+        interviewPlace: "",
+        contactPerson: "",
+        allowance: "",
+        remarks: ""
       });
       setIsAddDialogOpen(false);
     }
@@ -93,6 +101,46 @@ const CompanyList = () => {
                   }
                 />
               </div>
+              <div className="grid gap-2">
+                <Label htmlFor="interviewPlace">Interview Place</Label>
+                <Input
+                  id="interviewPlace"
+                  value={newCompany.interviewPlace}
+                  onChange={(e) =>
+                    setNewCompany({ ...newCompany, interviewPlace: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="contactPerson">Contact Person</Label>
+                <Input
+                  id="contactPerson"
+                  value={newCompany.contactPerson}
+                  onChange={(e) =>
+                    setNewCompany({ ...newCompany, contactPerson: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="allowance">Allowance</Label>
+                <Input
+                  id="allowance"
+                  value={newCompany.allowance}
+                  onChange={(e) =>
+                    setNewCompany({ ...newCompany, allowance: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="remarks">Remarks</Label>
+                <Input
+                  id="remarks"
+                  value={newCompany.remarks}
+                  onChange={(e) =>
+                    setNewCompany({ ...newCompany, remarks: e.target.value })
+                  }
+                />
+              </div>
             </div>
             <Button onClick={handleAddCompany}>Add Company</Button>
           </DialogContent>
@@ -110,10 +158,12 @@ const CompanyList = () => {
               <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
                 {company.description}
               </p>
+              <div className="space-y-2 mb-4">
+                <p className="text-sm"><span className="font-medium">Intake:</span> {company.intakeNumber} students</p>
+                <p className="text-sm"><span className="font-medium">Place:</span> {company.interviewPlace || "N/A"}</p>
+                <p className="text-sm"><span className="font-medium">Contact:</span> {company.contactPerson || "N/A"}</p>
+              </div>
               <div className="flex items-center justify-between">
-                <div className="text-sm">
-                  <span className="font-medium">Intake:</span> {company.intakeNumber} students
-                </div>
                 <div className="flex space-x-2">
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
