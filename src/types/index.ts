@@ -22,6 +22,9 @@ export interface Student {
   id: string;
   name: string;
   email: string;
+  studentId: string; // Added studentId field
+  tel: string; // Added telephone number field
+  gpa: string; // Added GPA field
   preferences: StudentPreference[];
   bookedInterviews: InterviewSlot[];
 }

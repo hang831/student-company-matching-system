@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { Company } from "@/types";
 import { Clock } from "lucide-react";
+import TimeslotManager from "./TimeslotManager";
 
 interface CompanyDetailsProps {
   company: Company;
@@ -40,7 +41,8 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
         <Tabs defaultValue="details">
           <TabsList className="mb-4">
             <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="interviews">Interview Slots</TabsTrigger>
+            <TabsTrigger value="timeslots">Timeslots</TabsTrigger>
+            <TabsTrigger value="interviews">Booked Interviews</TabsTrigger>
           </TabsList>
           
           <TabsContent value="details" className="space-y-4">
@@ -79,6 +81,10 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
                 }
               />
             </div>
+          </TabsContent>
+          
+          <TabsContent value="timeslots">
+            <TimeslotManager companyId={company.id} />
           </TabsContent>
           
           <TabsContent value="interviews">

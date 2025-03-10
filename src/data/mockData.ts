@@ -42,33 +42,8 @@ export const mockCompanies: Company[] = [
 // Generate mock interview slots for companies
 const generateInterviewSlots = () => {
   const slots: InterviewSlot[] = [];
-  const currentDate = new Date();
   
-  // Generate slots for the next 7 days
-  for (let day = 1; day <= 7; day++) {
-    const date = new Date(currentDate);
-    date.setDate(currentDate.getDate() + day);
-    
-    // For each company
-    mockCompanies.forEach(company => {
-      // Generate 3 slots per day per company
-      for (let hour = 9; hour <= 15; hour += 3) {
-        const slot: InterviewSlot = {
-          id: `${company.id}-${date.toISOString()}-${hour}`,
-          date: new Date(date),
-          startTime: `${hour}:00`,
-          endTime: `${hour + 1}:00`,
-          companyId: company.id,
-          booked: false,
-          isAvailable: true, // All slots start as available by default
-        };
-        slots.push(slot);
-        
-        // Add this slot to the company's available slots
-        company.availableSlots.push(slot);
-      }
-    });
-  }
+  // We'll no longer generate default slots since users will add them manually
   
   return slots;
 };
@@ -81,6 +56,9 @@ export const mockStudents: Student[] = [
     id: "s1",
     name: "Alex Johnson",
     email: "alex.j@example.com",
+    studentId: "ST12345",
+    tel: "555-123-4567",
+    gpa: "3.8",
     preferences: [],
     bookedInterviews: [],
   },
@@ -88,6 +66,9 @@ export const mockStudents: Student[] = [
     id: "s2",
     name: "Jamie Smith",
     email: "jamie.s@example.com",
+    studentId: "ST23456",
+    tel: "555-234-5678",
+    gpa: "3.5",
     preferences: [],
     bookedInterviews: [],
   },
@@ -95,6 +76,9 @@ export const mockStudents: Student[] = [
     id: "s3",
     name: "Morgan Lee",
     email: "morgan.l@example.com",
+    studentId: "ST34567",
+    tel: "555-345-6789",
+    gpa: "4.0",
     preferences: [],
     bookedInterviews: [],
   },

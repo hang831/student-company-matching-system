@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Company, Student, InterviewSlot, StudentPreference } from "@/types";
 import { mockCompanies, mockStudents, interviewSlots } from "@/data/mockData";
@@ -32,6 +33,19 @@ export const useInternshipSystem = () => {
     toast({
       title: "Company updated",
       description: `${updatedCompany.name} has been updated successfully.`,
+    });
+  };
+
+  // Update student details
+  const updateStudent = (updatedStudent: Student) => {
+    setStudents(
+      students.map((student) =>
+        student.id === updatedStudent.id ? updatedStudent : student
+      )
+    );
+    toast({
+      title: "Student updated",
+      description: `${updatedStudent.name} has been updated successfully.`,
     });
   };
 
@@ -81,6 +95,96 @@ export const useInternshipSystem = () => {
       description: updatedSlot.isAvailable 
         ? "The interview slot is now available for booking." 
         : "The interview slot is now unavailable for booking.",
+    });
+    
+    return true;
+  };
+
+  // Add timeslot for a company
+  const addTimeslot = ({ 
+    date, 
+    startTime, 
+    endTime, 
+    companyId 
+  }: { 
+    date: Date; 
+    startTime: string; 
+    endTime: string; 
+    companyId: string; 
+  }) => {
+    const newSlot: InterviewSlot = {
+      id: `slot-${Date.now()}`,
+      date,
+      startTime,
+      endTime,
+      companyId,
+      booked: false,
+      isAvailable: true,
+    };
+    
+    // Add to global slots
+    setSlots([...slots, newSlot]);
+    
+    // Add to company available slots
+    setCompanies(
+      companies.map((company) => {
+        if (company.id === companyId) {
+          return {
+            ...company,
+            availableSlots: [...company.availableSlots, newSlot],
+          };
+        }
+        return company;
+      })
+    );
+    
+    toast({
+      title: "Timeslot added",
+      description: "A new interview timeslot has been added.",
+    });
+  };
+  
+  // Remove timeslot
+  const removeTimeslot = (slotId: string) => {
+    const slot = slots.find((s) => s.id === slotId);
+    
+    if (!slot) {
+      toast({
+        title: "Error",
+        description: "Interview slot not found.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    if (slot.booked) {
+      toast({
+        title: "Error",
+        description: "Cannot remove a booked slot.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    // Remove from global slots
+    setSlots(slots.filter((s) => s.id !== slotId));
+    
+    // Remove from company available slots
+    setCompanies(
+      companies.map((company) => {
+        if (company.id === slot.companyId) {
+          return {
+            ...company,
+            availableSlots: company.availableSlots.filter((s) => s.id !== slotId),
+          };
+        }
+        return company;
+      })
+    );
+    
+    toast({
+      title: "Timeslot removed",
+      description: "The interview timeslot has been removed.",
     });
     
     return true;
@@ -234,6 +338,9 @@ export const useInternshipSystem = () => {
     slots,
     addCompany,
     updateCompany,
+    updateStudent,
+    addTimeslot,
+    removeTimeslot,
     addStudentPreference,
     bookInterviewSlot,
     getAvailableSlotsForCompany,
