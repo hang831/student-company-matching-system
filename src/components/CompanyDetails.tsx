@@ -21,14 +21,23 @@ interface CompanyDetailsProps {
 const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
   const { updateCompany, getStudentById, toggleSlotAvailability, getCompanyById } = useInternshipSystem();
   const [editedCompany, setEditedCompany] = useState<Company>({ ...company });
+  const [activeTab, setActiveTab] = useState("details");
   
-  // Refresh company data when it changes
+  // Refresh company data whenever it changes or tab changes
   useEffect(() => {
-    const refreshedCompany = getCompanyById(company.id);
-    if (refreshedCompany) {
-      setEditedCompany(refreshedCompany);
-    }
-  }, [company.id, getCompanyById]);
+    const refreshData = () => {
+      const refreshedCompany = getCompanyById(company.id);
+      if (refreshedCompany) {
+        setEditedCompany(refreshedCompany);
+      }
+    };
+    
+    refreshData();
+    // Set up a small interval to refresh data periodically
+    const intervalId = setInterval(refreshData, 1000);
+    
+    return () => clearInterval(intervalId);
+  }, [company.id, getCompanyById, activeTab]);
 
   const handleSave = () => {
     updateCompany(editedCompany);
@@ -53,7 +62,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
           <DialogDescription>View and edit company information</DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="details">
+        <Tabs defaultValue="details" onValueChange={setActiveTab} value={activeTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="timeslots">Timeslots</TabsTrigger>

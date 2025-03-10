@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useInternshipSystem } from "@/hooks/useInternshipSystem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,10 +14,16 @@ const InterviewSchedule = () => {
   const { companies, students, slots, bookInterviewSlot, getStudentById } = useInternshipSystem();
   const [selectedSlot, setSelectedSlot] = useState<InterviewSlot | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
+  const [localSlots, setLocalSlots] = useState(slots);
+  
+  // Update local slots whenever the global slots change
+  useEffect(() => {
+    setLocalSlots(slots);
+  }, [slots]);
 
   // Group slots by date
-  const slotsByDate = slots.reduce((acc, slot) => {
-    const dateStr = format(slot.date, "yyyy-MM-dd");
+  const slotsByDate = localSlots.reduce((acc, slot) => {
+    const dateStr = format(new Date(slot.date), "yyyy-MM-dd");
     if (!acc[dateStr]) {
       acc[dateStr] = [];
     }
@@ -111,7 +117,7 @@ const InterviewSchedule = () => {
             <div className="py-4 space-y-4">
               <div>
                 <p className="font-medium">Date & Time:</p>
-                <p>{format(selectedSlot.date, "EEEE, MMMM d, yyyy")}, {selectedSlot.startTime} - {selectedSlot.endTime}</p>
+                <p>{format(new Date(selectedSlot.date), "EEEE, MMMM d, yyyy")}, {selectedSlot.startTime} - {selectedSlot.endTime}</p>
               </div>
               <div>
                 <p className="font-medium">Company:</p>

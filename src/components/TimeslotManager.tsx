@@ -24,7 +24,16 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
   
   // Refresh company data whenever it changes
   useEffect(() => {
-    setCompany(getCompanyById(companyId));
+    const refreshData = () => {
+      const refreshedCompany = getCompanyById(companyId);
+      setCompany(refreshedCompany);
+    };
+    
+    refreshData();
+    // Set up a small interval to refresh data periodically
+    const intervalId = setInterval(refreshData, 1000);
+    
+    return () => clearInterval(intervalId);
   }, [companyId, getCompanyById]);
   
   const handleAddTimeslot = () => {
@@ -38,9 +47,6 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
       endTime,
       companyId,
     });
-    
-    // Update the company data after adding a timeslot
-    setCompany(getCompanyById(companyId));
     
     // Reset form
     setDate(undefined);
@@ -132,8 +138,6 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
                   size="sm"
                   onClick={() => {
                     removeTimeslot(slot.id);
-                    // Update the company data after removing a timeslot
-                    setCompany(getCompanyById(companyId));
                   }}
                   disabled={slot.booked}
                 >
