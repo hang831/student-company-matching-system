@@ -4,16 +4,18 @@ import { useInternshipSystem } from "@/hooks/useInternshipSystem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building, Plus, Edit } from "lucide-react";
+import { Building, Plus, Edit, Trash } from "lucide-react";
 import CompanyDetails from "./CompanyDetails";
 import { Company } from "@/types";
 
 const CompanyList = () => {
-  const { companies, addCompany } = useInternshipSystem();
+  const { companies, addCompany, deleteCompany } = useInternshipSystem();
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
   const [newCompany, setNewCompany] = useState({
     name: "",
     description: "",
@@ -29,6 +31,13 @@ const CompanyList = () => {
         intakeNumber: 1,
       });
       setIsAddDialogOpen(false);
+    }
+  };
+
+  const handleDeleteCompany = () => {
+    if (companyToDelete) {
+      deleteCompany(companyToDelete.id);
+      setCompanyToDelete(null);
     }
   };
 
@@ -104,13 +113,46 @@ const CompanyList = () => {
                 <div className="text-sm">
                   <span className="font-medium">Intake:</span> {company.intakeNumber} students
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedCompany(company)}
-                >
-                  <Edit className="h-4 w-4 mr-1" /> View Details
-                </Button>
+                <div className="flex space-x-2">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-500 hover:text-red-700"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCompanyToDelete(company);
+                        }}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete the company "{company.name}" and all its associated data.
+                          This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setCompanyToDelete(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteCompany} className="bg-red-500 hover:bg-red-700">
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedCompany(company)}
+                  >
+                    <Edit className="h-4 w-4 mr-1" /> View Details
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

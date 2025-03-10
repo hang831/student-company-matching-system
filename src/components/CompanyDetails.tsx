@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Company } from "@/types";
 import { Clock } from "lucide-react";
 import TimeslotManager from "./TimeslotManager";
@@ -22,6 +23,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
   const { updateCompany, getStudentById, toggleSlotAvailability, getCompanyById } = useInternshipSystem();
   const [editedCompany, setEditedCompany] = useState<Company>({ ...company });
   const [activeTab, setActiveTab] = useState("details");
+  const [isFormDirty, setIsFormDirty] = useState(false);
   
   // Refresh company data whenever it changes or tab changes
   useEffect(() => {
@@ -39,8 +41,17 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
     return () => clearInterval(intervalId);
   }, [company.id, getCompanyById, activeTab]);
 
+  const handleInputChange = (field: keyof Company, value: string | number) => {
+    setEditedCompany(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    setIsFormDirty(true);
+  };
+
   const handleSave = () => {
     updateCompany(editedCompany);
+    setIsFormDirty(false);
     onClose();
   };
 
@@ -76,7 +87,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
                 id="name"
                 value={editedCompany.name}
                 onChange={(e) =>
-                  setEditedCompany({ ...editedCompany, name: e.target.value })
+                  handleInputChange('name', e.target.value)
                 }
               />
             </div>
@@ -86,7 +97,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
                 id="description"
                 value={editedCompany.description}
                 onChange={(e) =>
-                  setEditedCompany({ ...editedCompany, description: e.target.value })
+                  handleInputChange('description', e.target.value)
                 }
               />
             </div>
@@ -98,10 +109,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
                 min={1}
                 value={editedCompany.intakeNumber}
                 onChange={(e) =>
-                  setEditedCompany({
-                    ...editedCompany,
-                    intakeNumber: parseInt(e.target.value) || 1,
-                  })
+                  handleInputChange('intakeNumber', parseInt(e.target.value) || 1)
                 }
               />
             </div>
@@ -164,7 +172,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} disabled={!isFormDirty && activeTab === "details"}>
             Save Changes
           </Button>
         </div>

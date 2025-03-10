@@ -36,6 +36,36 @@ export const useInternshipSystem = () => {
     });
   };
 
+  // Delete company
+  const deleteCompany = (companyId: string) => {
+    // First, remove all interview slots associated with this company
+    const companySlotIds = slots.filter(slot => slot.companyId === companyId).map(slot => slot.id);
+    
+    // Update bookings for any students who had booked with this company
+    setStudents(
+      students.map(student => ({
+        ...student,
+        bookedInterviews: student.bookedInterviews.filter(
+          interview => !companySlotIds.includes(interview.id)
+        ),
+        preferences: student.preferences.filter(
+          pref => pref.companyId !== companyId
+        )
+      }))
+    );
+    
+    // Remove slots associated with this company
+    setSlots(slots.filter(slot => slot.companyId !== companyId));
+    
+    // Remove the company itself
+    setCompanies(companies.filter(company => company.id !== companyId));
+    
+    toast({
+      title: "Company deleted",
+      description: "The company and all its associated data have been removed.",
+    });
+  };
+
   // Update student details
   const updateStudent = (updatedStudent: Student) => {
     setStudents(
@@ -340,6 +370,7 @@ export const useInternshipSystem = () => {
     slots,
     addCompany,
     updateCompany,
+    deleteCompany,
     updateStudent,
     addTimeslot,
     removeTimeslot,
