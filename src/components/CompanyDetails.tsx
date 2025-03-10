@@ -22,17 +22,13 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
   const { updateCompany, getStudentById, toggleSlotAvailability, getCompanyById } = useInternshipSystem();
   const [editedCompany, setEditedCompany] = useState<Company>({ ...company });
   const [activeTab, setActiveTab] = useState("details");
-  const [isFormDirty, setIsFormDirty] = useState(false);
   
   // Refresh company data whenever it changes or tab changes
   useEffect(() => {
     const refreshData = () => {
       const refreshedCompany = getCompanyById(company.id);
-      if (refreshedCompany) {
-        // Only update if not editing company details
-        if (activeTab !== "details" || !isFormDirty) {
-          setEditedCompany(refreshedCompany);
-        }
+      if (refreshedCompany && activeTab !== "details") {
+        setEditedCompany(refreshedCompany);
       }
     };
     
@@ -41,19 +37,17 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
     const intervalId = setInterval(refreshData, 1000);
     
     return () => clearInterval(intervalId);
-  }, [company.id, getCompanyById, activeTab, isFormDirty]);
+  }, [company.id, getCompanyById, activeTab]);
 
   const handleInputChange = (field: keyof Company, value: string | number) => {
     setEditedCompany(prev => ({
       ...prev,
       [field]: value
     }));
-    setIsFormDirty(true);
   };
 
   const handleSave = () => {
     updateCompany(editedCompany);
-    setIsFormDirty(false);
     onClose();
   };
 
@@ -187,7 +181,6 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
                         <Switch
                           checked={slot.isAvailable}
                           onCheckedChange={() => handleToggleAvailability(slot.id)}
-                          disabled={slot.booked}
                         />
                       </TableCell>
                       <TableCell>

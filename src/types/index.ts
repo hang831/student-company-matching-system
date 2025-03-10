@@ -4,10 +4,10 @@ export interface Company {
   name: string;
   description: string;
   intakeNumber: number;
-  interviewPlace: string; // New field
-  contactPerson: string;  // New field
-  allowance: string;      // New field
-  remarks: string;        // New field
+  interviewPlace: string; 
+  contactPerson: string;  
+  allowance: string;      
+  remarks: string;        
   availableSlots: InterviewSlot[];
 }
 
@@ -56,4 +56,10 @@ export interface StudentImportData {
   studentId: string;
   tel: string;
   gpa: string;
+}
+
+export interface PreferenceImportData {
+  studentId: string;
+  companyName: string;
+  rank: number;
 }

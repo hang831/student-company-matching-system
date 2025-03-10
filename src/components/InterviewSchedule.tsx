@@ -39,6 +39,74 @@ const InterviewSchedule = () => {
     }
   };
 
+  // Get students who have a preference for a specific company
+  const getStudentsWithPreference = (companyId: string) => {
+    return students.filter(student => 
+      student.preferences.some(pref => pref.companyId === companyId && pref.rank >= 1 && pref.rank <= 5)
+    );
+  };
+
+  // Create preference matrix
+  const preferenceMatrix = () => {
+    if (companies.length === 0 || students.length === 0) {
+      return null;
+    }
+    
+    // Count preferences for each company
+    const preferenceCount: Record<string, number> = {};
+    companies.forEach(company => {
+      preferenceCount[company.id] = students.reduce((count, student) => {
+        const hasPreference = student.preferences.some(
+          pref => pref.companyId === company.id && pref.rank >= 1 && pref.rank <= 5
+        );
+        return hasPreference ? count + 1 : count;
+      }, 0);
+    });
+    
+    return (
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Student Preferences Matrix</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[150px]">Student</TableHead>
+                  {companies.map(company => (
+                    <TableHead key={company.id}>
+                      <div>{company.name}</div>
+                      <div className="text-xs font-normal">Selected: {preferenceCount[company.id]}</div>
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {students.map(student => (
+                  <TableRow key={student.id}>
+                    <TableCell className="font-medium">{student.name}</TableCell>
+                    {companies.map(company => {
+                      const preference = student.preferences.find(p => p.companyId === company.id);
+                      return (
+                        <TableCell 
+                          key={company.id} 
+                          className={preference && preference.rank >= 1 && preference.rank <= 5 ? "bg-yellow-100" : ""}
+                        >
+                          {preference && preference.rank >= 1 && preference.rank <= 5 ? preference.rank : ""}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   // Create a matrix representation of the schedule for visualization
   const scheduleMatrix = () => {
     // Filter for only booked slots
@@ -128,6 +196,7 @@ const InterviewSchedule = () => {
       </div>
 
       {scheduleMatrix()}
+      {preferenceMatrix()}
 
       {Object.entries(slotsByDate).map(([dateStr, daySlots]) => (
         <Card key={dateStr} className="mb-6">
@@ -221,9 +290,13 @@ const InterviewSchedule = () => {
                     <SelectValue placeholder={selectedSlot.booked ? getStudentById(selectedSlot.studentId || "")?.name || "Select a student" : "Select a student"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {students.map(student => (
+                    {getStudentsWithPreference(selectedSlot.companyId).map(student => (
                       <SelectItem key={student.id} value={student.id}>
-                        {student.name}
+                        {student.name} 
+                        {student.preferences.find(p => p.companyId === selectedSlot.companyId)
+                          ? ` (Rank: ${student.preferences.find(p => p.companyId === selectedSlot.companyId)?.rank})`
+                          : ""
+                        }
                       </SelectItem>
                     ))}
                   </SelectContent>

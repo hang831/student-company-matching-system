@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Company, Student, InterviewSlot, StudentPreference, CompanyImportData, StudentImportData } from "@/types";
+import { Company, Student, InterviewSlot, StudentPreference, CompanyImportData, StudentImportData, PreferenceImportData } from "@/types";
 import { mockCompanies, mockStudents, interviewSlots } from "@/data/mockData";
 import { toast } from "@/hooks/use-toast";
 
@@ -27,6 +27,18 @@ export const useInternshipSystem = () => {
     localStorage.setItem('students', JSON.stringify(students));
     localStorage.setItem('slots', JSON.stringify(slots));
   }, [companies, students, slots]);
+
+  // Refresh function to force a UI update
+  const refresh = () => {
+    // Load the latest data from localStorage
+    const savedCompanies = localStorage.getItem('companies');
+    const savedStudents = localStorage.getItem('students');
+    const savedSlots = localStorage.getItem('slots');
+    
+    if (savedCompanies) setCompanies(JSON.parse(savedCompanies));
+    if (savedStudents) setStudents(JSON.parse(savedStudents));
+    if (savedSlots) setSlots(JSON.parse(savedSlots));
+  };
 
   // Add new company
   const addCompany = (company: Omit<Company, "id" | "availableSlots">) => {
@@ -458,6 +470,9 @@ export const useInternshipSystem = () => {
     }));
     
     setCompanies([...companies, ...newCompanies]);
+    
+    // Force refresh to update UI
+    setTimeout(refresh, 100);
   };
   
   // Import students from CSV data
@@ -470,6 +485,42 @@ export const useInternshipSystem = () => {
     }));
     
     setStudents([...students, ...newStudents]);
+    
+    // Force refresh to update UI
+    setTimeout(refresh, 100);
+  };
+  
+  // Import student preferences from CSV data
+  const importPreferences = (preferencesDataList: PreferenceImportData[]) => {
+    // Process each preference in the import data
+    preferencesDataList.forEach(prefData => {
+      // Find student by student ID
+      const student = students.find(s => s.studentId === prefData.studentId);
+      if (!student) {
+        console.warn(`Student with ID ${prefData.studentId} not found`);
+        return;
+      }
+      
+      // Find company by name
+      const company = companies.find(c => c.name === prefData.companyName);
+      if (!company) {
+        console.warn(`Company with name ${prefData.companyName} not found`);
+        return;
+      }
+      
+      // Create the preference
+      const preference: StudentPreference = {
+        studentId: student.id,
+        companyId: company.id,
+        rank: prefData.rank
+      };
+      
+      // Add the preference
+      addStudentPreference(preference);
+    });
+    
+    // Force refresh to update UI
+    setTimeout(refresh, 100);
   };
 
   return {
@@ -491,6 +542,8 @@ export const useInternshipSystem = () => {
     getCompanyById,
     toggleSlotAvailability,
     importCompanies,
-    importStudents
+    importStudents,
+    importPreferences,
+    refresh
   };
 };

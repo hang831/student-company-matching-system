@@ -1,5 +1,5 @@
 
-import { CompanyImportData, StudentImportData } from "@/types";
+import { CompanyImportData, StudentImportData, PreferenceImportData } from "@/types";
 
 // Function to generate Excel template for companies
 export const generateCompanyTemplate = () => {
@@ -24,6 +24,22 @@ export const generateStudentTemplate = () => {
   const csv = [
     headers.join(","),
     sampleData.join(",")
+  ].join("\n");
+  
+  return csv;
+};
+
+// Function to generate Excel template for student preferences
+export const generatePreferencesTemplate = () => {
+  // Create a simple CSV file for student preferences template
+  const headers = ["Student ID", "Company Name", "Preference Rank"];
+  const sampleData1 = ["S12345", "Tech Innovations Inc.", "1"];
+  const sampleData2 = ["S12345", "Global Finance Group", "2"];
+  
+  const csv = [
+    headers.join(","),
+    sampleData1.join(","),
+    sampleData2.join(",")
   ].join("\n");
   
   return csv;
@@ -93,5 +109,14 @@ export const mapCSVToStudentData = (csvData: any[]): StudentImportData[] => {
     studentId: row.studentid || "",
     tel: row.telephone || "",
     gpa: row.gpa || ""
+  }));
+};
+
+// Map CSV data to student preferences structure
+export const mapCSVToPreferencesData = (csvData: any[]): PreferenceImportData[] => {
+  return csvData.map(row => ({
+    studentId: row.studentid || "",
+    companyName: row.companyname || "",
+    rank: parseInt(row.preferencerank || "0", 10) || 1
   }));
 };
