@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Company, Student, InterviewSlot, StudentPreference } from "@/types";
 import { mockCompanies, mockStudents, interviewSlots } from "@/data/mockData";
@@ -36,12 +35,62 @@ export const useInternshipSystem = () => {
     });
   };
 
+  // Toggle slot availability
+  const toggleSlotAvailability = (slotId: string) => {
+    const slot = slots.find((s) => s.id === slotId);
+    if (!slot) {
+      toast({
+        title: "Error",
+        description: "Interview slot not found.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (slot.booked) {
+      toast({
+        title: "Error",
+        description: "Cannot change availability of a booked slot.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    const updatedSlot = { ...slot, isAvailable: !slot.isAvailable };
+    
+    setSlots(
+      slots.map((s) => (s.id === slotId ? updatedSlot : s))
+    );
+
+    setCompanies(
+      companies.map((company) => {
+        if (company.id === slot.companyId) {
+          return {
+            ...company,
+            availableSlots: company.availableSlots.map((s) =>
+              s.id === slotId ? updatedSlot : s
+            ),
+          };
+        }
+        return company;
+      })
+    );
+
+    toast({
+      title: updatedSlot.isAvailable ? "Slot Activated" : "Slot Deactivated",
+      description: updatedSlot.isAvailable 
+        ? "The interview slot is now available for booking." 
+        : "The interview slot is now unavailable for booking.",
+    });
+    
+    return true;
+  };
+
   // Add student preference
   const addStudentPreference = (preference: StudentPreference) => {
     setStudents(
       students.map((student) => {
         if (student.id === preference.studentId) {
-          // Check if preference for this company already exists
           const existingPrefIndex = student.preferences.findIndex(
             (pref) => pref.companyId === preference.companyId
           );
@@ -49,10 +98,8 @@ export const useInternshipSystem = () => {
           let updatedPreferences = [...student.preferences];
           
           if (existingPrefIndex >= 0) {
-            // Update existing preference
             updatedPreferences[existingPrefIndex] = preference;
           } else {
-            // Add new preference
             updatedPreferences.push(preference);
           }
           
@@ -91,13 +138,20 @@ export const useInternshipSystem = () => {
       return false;
     }
 
-    // Update the slot
+    if (!slot.isAvailable) {
+      toast({
+        title: "Error",
+        description: "This slot is not available for booking.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     const updatedSlot = { ...slot, booked: true, studentId };
     setSlots(
       slots.map((s) => (s.id === slotId ? updatedSlot : s))
     );
 
-    // Update company's available slots
     setCompanies(
       companies.map((company) => {
         if (company.id === slot.companyId) {
@@ -112,7 +166,6 @@ export const useInternshipSystem = () => {
       })
     );
 
-    // Update student's booked interviews
     setStudents(
       students.map((student) => {
         if (student.id === studentId) {
@@ -135,7 +188,7 @@ export const useInternshipSystem = () => {
   // Get available slots for a company
   const getAvailableSlotsForCompany = (companyId: string) => {
     return slots.filter(
-      (slot) => slot.companyId === companyId && !slot.booked
+      (slot) => slot.companyId === companyId && !slot.booked && slot.isAvailable
     );
   };
 
@@ -151,26 +204,20 @@ export const useInternshipSystem = () => {
 
   // Auto-assign interviews based on student preferences
   const autoAssignInterviews = () => {
-    // Sort students by ID to ensure consistent processing
     const sortedStudents = [...students].sort((a, b) => a.id.localeCompare(b.id));
     
-    // For each student
     for (const student of sortedStudents) {
-      // Sort preferences by rank (1 being highest priority)
       const sortedPreferences = [...student.preferences].sort((a, b) => a.rank - b.rank);
       
-      // For each preference
       for (const preference of sortedPreferences) {
         const company = getCompanyById(preference.companyId);
         if (!company) continue;
         
-        // Get available slots for this company
         const availableSlots = getAvailableSlotsForCompany(company.id);
         
-        // Book the first available slot if any
         if (availableSlots.length > 0) {
           bookInterviewSlot(availableSlots[0].id, student.id);
-          break; // Move to next student once a slot is booked
+          break;
         }
       }
     }
@@ -193,5 +240,6 @@ export const useInternshipSystem = () => {
     getStudentById,
     getCompanyById,
     autoAssignInterviews,
+    toggleSlotAvailability,
   };
 };

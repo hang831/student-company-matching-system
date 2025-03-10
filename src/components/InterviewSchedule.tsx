@@ -64,7 +64,7 @@ const InterviewSchedule = () => {
                   const student = slot.studentId ? getStudentById(slot.studentId) : null;
                   
                   return (
-                    <TableRow key={slot.id}>
+                    <TableRow key={slot.id} className={!slot.isAvailable ? "opacity-60" : ""}>
                       <TableCell className="flex items-center">
                         <Clock className="h-4 w-4 mr-2" />
                         {slot.startTime} - {slot.endTime}
@@ -77,13 +77,13 @@ const InterviewSchedule = () => {
                           </span>
                         ) : (
                           <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                            Available
+                            {slot.isAvailable ? "Available" : "Unavailable"}
                           </span>
                         )}
                       </TableCell>
                       <TableCell>{student?.name || "-"}</TableCell>
                       <TableCell>
-                        {!slot.booked && (
+                        {!slot.booked && slot.isAvailable && (
                           <Button 
                             variant="outline" 
                             size="sm"

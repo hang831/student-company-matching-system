@@ -60,6 +60,7 @@ const generateInterviewSlots = () => {
           endTime: `${hour + 1}:00`,
           companyId: company.id,
           booked: false,
+          isAvailable: true, // All slots start as available by default
         };
         slots.push(slot);
         

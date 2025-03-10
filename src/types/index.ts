@@ -14,6 +14,7 @@ export interface InterviewSlot {
   endTime: string;
   companyId: string;
   booked: boolean;
+  isAvailable: boolean;
   studentId?: string;
 }
 

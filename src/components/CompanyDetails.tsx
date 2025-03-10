@@ -8,7 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
 import { Company } from "@/types";
+import { Clock } from "lucide-react";
 
 interface CompanyDetailsProps {
   company: Company;
@@ -16,12 +18,16 @@ interface CompanyDetailsProps {
 }
 
 const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
-  const { updateCompany, getStudentById } = useInternshipSystem();
+  const { updateCompany, getStudentById, toggleSlotAvailability } = useInternshipSystem();
   const [editedCompany, setEditedCompany] = useState<Company>({ ...company });
 
   const handleSave = () => {
     updateCompany(editedCompany);
     onClose();
+  };
+
+  const handleToggleAvailability = (slotId: string) => {
+    toggleSlotAvailability(slotId);
   };
 
   return (
@@ -81,6 +87,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
                 <TableRow>
                   <TableHead>Date</TableHead>
                   <TableHead>Time</TableHead>
+                  <TableHead>Available</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Student</TableHead>
                 </TableRow>
@@ -90,9 +97,19 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
                   const student = slot.studentId ? getStudentById(slot.studentId) : null;
                   
                   return (
-                    <TableRow key={slot.id}>
+                    <TableRow key={slot.id} className={!slot.isAvailable ? "opacity-60" : ""}>
                       <TableCell>{format(slot.date, "MMM d, yyyy")}</TableCell>
-                      <TableCell>{slot.startTime} - {slot.endTime}</TableCell>
+                      <TableCell className="flex items-center">
+                        <Clock className="h-4 w-4 mr-2" />
+                        {slot.startTime} - {slot.endTime}
+                      </TableCell>
+                      <TableCell>
+                        <Switch
+                          checked={slot.isAvailable}
+                          onCheckedChange={() => handleToggleAvailability(slot.id)}
+                          disabled={slot.booked}
+                        />
+                      </TableCell>
                       <TableCell>
                         {slot.booked ? (
                           <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
@@ -100,7 +117,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
                           </span>
                         ) : (
                           <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                            Available
+                            {slot.isAvailable ? "Available" : "Unavailable"}
                           </span>
                         )}
                       </TableCell>
