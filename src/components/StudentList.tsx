@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useInternshipSystem } from "@/hooks/useInternshipSystem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,12 @@ const StudentList = () => {
         companyId,
         rank,
       });
+      
+      // Make a new selection of the student to refresh the data
+      const updatedStudent = students.find(s => s.id === selectedStudent.id);
+      if (updatedStudent) {
+        setSelectedStudent(updatedStudent);
+      }
     }
   };
 
@@ -115,6 +121,7 @@ const StudentList = () => {
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Student Preferences</DialogTitle>
+              <DialogDescription>Set your company preferences</DialogDescription>
             </DialogHeader>
             <div className="py-4">
               <h3 className="text-lg font-medium mb-2">{selectedStudent.name}</h3>
@@ -181,6 +188,7 @@ const StudentList = () => {
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Edit Student</DialogTitle>
+              <DialogDescription>Update student information</DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
               <div className="grid gap-2">

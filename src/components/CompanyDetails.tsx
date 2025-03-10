@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Company } from "@/types";
 import { Clock } from "lucide-react";
 import TimeslotManager from "./TimeslotManager";
@@ -30,7 +29,10 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
     const refreshData = () => {
       const refreshedCompany = getCompanyById(company.id);
       if (refreshedCompany) {
-        setEditedCompany(refreshedCompany);
+        // Only update if not editing company details
+        if (activeTab !== "details" || !isFormDirty) {
+          setEditedCompany(refreshedCompany);
+        }
       }
     };
     
@@ -39,7 +41,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
     const intervalId = setInterval(refreshData, 1000);
     
     return () => clearInterval(intervalId);
-  }, [company.id, getCompanyById, activeTab]);
+  }, [company.id, getCompanyById, activeTab, isFormDirty]);
 
   const handleInputChange = (field: keyof Company, value: string | number) => {
     setEditedCompany(prev => ({
@@ -172,7 +174,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!isFormDirty && activeTab === "details"}>
+          <Button onClick={handleSave}>
             Save Changes
           </Button>
         </div>

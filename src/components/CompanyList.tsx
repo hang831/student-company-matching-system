@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useInternshipSystem } from "@/hooks/useInternshipSystem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,6 +55,7 @@ const CompanyList = () => {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add New Company</DialogTitle>
+              <DialogDescription>Complete the form to add a new company.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
@@ -148,7 +149,10 @@ const CompanyList = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setSelectedCompany(company)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedCompany(company);
+                    }}
                   >
                     <Edit className="h-4 w-4 mr-1" /> View Details
                   </Button>

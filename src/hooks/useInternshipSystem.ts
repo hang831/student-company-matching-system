@@ -1,19 +1,38 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Company, Student, InterviewSlot, StudentPreference } from "@/types";
 import { mockCompanies, mockStudents, interviewSlots } from "@/data/mockData";
 import { toast } from "@/hooks/use-toast";
 
 export const useInternshipSystem = () => {
-  const [companies, setCompanies] = useState<Company[]>(mockCompanies);
-  const [students, setStudents] = useState<Student[]>(mockStudents);
-  const [slots, setSlots] = useState<InterviewSlot[]>(interviewSlots);
+  // Initialize state from localStorage or fallback to mock data
+  const [companies, setCompanies] = useState<Company[]>(() => {
+    const savedCompanies = localStorage.getItem('companies');
+    return savedCompanies ? JSON.parse(savedCompanies) : mockCompanies;
+  });
+  
+  const [students, setStudents] = useState<Student[]>(() => {
+    const savedStudents = localStorage.getItem('students');
+    return savedStudents ? JSON.parse(savedStudents) : mockStudents;
+  });
+  
+  const [slots, setSlots] = useState<InterviewSlot[]>(() => {
+    const savedSlots = localStorage.getItem('slots');
+    return savedSlots ? JSON.parse(savedSlots) : interviewSlots;
+  });
+
+  // Save to localStorage whenever state changes
+  useEffect(() => {
+    localStorage.setItem('companies', JSON.stringify(companies));
+    localStorage.setItem('students', JSON.stringify(students));
+    localStorage.setItem('slots', JSON.stringify(slots));
+  }, [companies, students, slots]);
 
   // Add new company
   const addCompany = (company: Omit<Company, "id" | "availableSlots">) => {
     const newCompany: Company = {
       ...company,
-      id: `c${companies.length + 1}`,
+      id: `c${Date.now()}`, // Use timestamp for unique IDs
       availableSlots: [],
     };
     setCompanies([...companies, newCompany]);
