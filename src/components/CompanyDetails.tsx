@@ -1,8 +1,8 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useInternshipSystem } from "@/hooks/useInternshipSystem";
 import { format } from "date-fns";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,8 +19,16 @@ interface CompanyDetailsProps {
 }
 
 const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
-  const { updateCompany, getStudentById, toggleSlotAvailability } = useInternshipSystem();
+  const { updateCompany, getStudentById, toggleSlotAvailability, getCompanyById } = useInternshipSystem();
   const [editedCompany, setEditedCompany] = useState<Company>({ ...company });
+  
+  // Refresh company data when it changes
+  useEffect(() => {
+    const refreshedCompany = getCompanyById(company.id);
+    if (refreshedCompany) {
+      setEditedCompany(refreshedCompany);
+    }
+  }, [company.id, getCompanyById]);
 
   const handleSave = () => {
     updateCompany(editedCompany);
@@ -28,7 +36,13 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
   };
 
   const handleToggleAvailability = (slotId: string) => {
-    toggleSlotAvailability(slotId);
+    if (toggleSlotAvailability(slotId)) {
+      // Update the company data after toggling
+      const refreshedCompany = getCompanyById(company.id);
+      if (refreshedCompany) {
+        setEditedCompany(refreshedCompany);
+      }
+    }
   };
 
   return (
@@ -36,6 +50,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Company Details</DialogTitle>
+          <DialogDescription>View and edit company information</DialogDescription>
         </DialogHeader>
         
         <Tabs defaultValue="details">
@@ -99,12 +114,12 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {company.availableSlots.map((slot) => {
+                {editedCompany.availableSlots.map((slot) => {
                   const student = slot.studentId ? getStudentById(slot.studentId) : null;
                   
                   return (
                     <TableRow key={slot.id} className={!slot.isAvailable ? "opacity-60" : ""}>
-                      <TableCell>{format(slot.date, "MMM d, yyyy")}</TableCell>
+                      <TableCell>{format(new Date(slot.date), "MMM d, yyyy")}</TableCell>
                       <TableCell className="flex items-center">
                         <Clock className="h-4 w-4 mr-2" />
                         {slot.startTime} - {slot.endTime}

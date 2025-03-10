@@ -114,7 +114,7 @@ export const useInternshipSystem = () => {
   }) => {
     const newSlot: InterviewSlot = {
       id: `slot-${Date.now()}`,
-      date,
+      date: new Date(date),
       startTime,
       endTime,
       companyId,
@@ -123,20 +123,21 @@ export const useInternshipSystem = () => {
     };
     
     // Add to global slots
-    setSlots([...slots, newSlot]);
+    const updatedSlots = [...slots, newSlot];
+    setSlots(updatedSlots);
     
     // Add to company available slots
-    setCompanies(
-      companies.map((company) => {
-        if (company.id === companyId) {
-          return {
-            ...company,
-            availableSlots: [...company.availableSlots, newSlot],
-          };
-        }
-        return company;
-      })
-    );
+    const updatedCompanies = companies.map((company) => {
+      if (company.id === companyId) {
+        return {
+          ...company,
+          availableSlots: [...company.availableSlots, newSlot],
+        };
+      }
+      return company;
+    });
+    
+    setCompanies(updatedCompanies);
     
     toast({
       title: "Timeslot added",
@@ -167,20 +168,21 @@ export const useInternshipSystem = () => {
     }
     
     // Remove from global slots
-    setSlots(slots.filter((s) => s.id !== slotId));
+    const updatedSlots = slots.filter((s) => s.id !== slotId);
+    setSlots(updatedSlots);
     
     // Remove from company available slots
-    setCompanies(
-      companies.map((company) => {
-        if (company.id === slot.companyId) {
-          return {
-            ...company,
-            availableSlots: company.availableSlots.filter((s) => s.id !== slotId),
-          };
-        }
-        return company;
-      })
-    );
+    const updatedCompanies = companies.map((company) => {
+      if (company.id === slot.companyId) {
+        return {
+          ...company,
+          availableSlots: company.availableSlots.filter((s) => s.id !== slotId),
+        };
+      }
+      return company;
+    });
+    
+    setCompanies(updatedCompanies);
     
     toast({
       title: "Timeslot removed",

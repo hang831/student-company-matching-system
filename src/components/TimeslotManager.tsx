@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useInternshipSystem } from "@/hooks/useInternshipSystem";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,8 +20,12 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [startTime, setStartTime] = useState<string>("");
   const [endTime, setEndTime] = useState<string>("");
+  const [company, setCompany] = useState(getCompanyById(companyId));
   
-  const company = getCompanyById(companyId);
+  // Refresh company data whenever it changes
+  useEffect(() => {
+    setCompany(getCompanyById(companyId));
+  }, [companyId, getCompanyById]);
   
   const handleAddTimeslot = () => {
     if (!date || !startTime || !endTime) {
@@ -34,6 +38,9 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
       endTime,
       companyId,
     });
+    
+    // Update the company data after adding a timeslot
+    setCompany(getCompanyById(companyId));
     
     // Reset form
     setDate(undefined);
@@ -115,7 +122,7 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
                 className="flex items-center justify-between border rounded-md p-3"
               >
                 <div>
-                  <div className="font-medium">{format(slot.date, "MMM d, yyyy")}</div>
+                  <div className="font-medium">{format(new Date(slot.date), "MMM d, yyyy")}</div>
                   <div className="text-sm text-muted-foreground">
                     {slot.startTime} - {slot.endTime}
                   </div>
@@ -123,7 +130,11 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  onClick={() => removeTimeslot(slot.id)}
+                  onClick={() => {
+                    removeTimeslot(slot.id);
+                    // Update the company data after removing a timeslot
+                    setCompany(getCompanyById(companyId));
+                  }}
                   disabled={slot.booked}
                 >
                   <Trash className="h-4 w-4" />
