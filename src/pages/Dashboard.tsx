@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CompanyList from "@/components/CompanyList";
 import StudentList from "@/components/StudentList";
 import InterviewSchedule from "@/components/InterviewSchedule";
+import OffersManagement from "@/components/OffersManagement";
 import { useInternshipSystem } from "@/hooks/useInternshipSystem";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
@@ -17,6 +18,7 @@ const Dashboard = () => {
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importType, setImportType] = useState<"companies" | "students">("companies");
+  const [activeTab, setActiveTab] = useState("companies");
   
   const handleDownloadTemplate = (type: "companies" | "students") => {
     if (type === "companies") {
@@ -148,11 +150,12 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        <Tabs defaultValue="companies" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="companies">Companies</TabsTrigger>
             <TabsTrigger value="students">Students</TabsTrigger>
             <TabsTrigger value="schedule">Interview Schedule</TabsTrigger>
+            <TabsTrigger value="offers">Offers</TabsTrigger>
           </TabsList>
           <TabsContent value="companies">
             <CompanyList />
@@ -162,6 +165,9 @@ const Dashboard = () => {
           </TabsContent>
           <TabsContent value="schedule">
             <InterviewSchedule />
+          </TabsContent>
+          <TabsContent value="offers">
+            <OffersManagement />
           </TabsContent>
         </Tabs>
       </div>

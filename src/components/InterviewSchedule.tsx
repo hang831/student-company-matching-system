@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock } from "lucide-react";
+import { Calendar, Clock, Trash2 } from "lucide-react";
 import { InterviewSlot, Student, Company } from "@/types";
 
 const InterviewSchedule = () => {
-  const { companies, students, slots, bookInterviewSlot, getStudentById } = useInternshipSystem();
+  const { companies, students, slots, bookInterviewSlot, getStudentById, removeTimeslot } = useInternshipSystem();
   const [selectedSlot, setSelectedSlot] = useState<InterviewSlot | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [localSlots, setLocalSlots] = useState(slots);
@@ -87,7 +87,10 @@ const InterviewSchedule = () => {
                 <TableRow>
                   <TableHead className="w-[150px]">Student</TableHead>
                   {companies.map(company => (
-                    <TableHead key={company.id}>{company.name}</TableHead>
+                    <TableHead key={company.id}>
+                      <div>{company.name}</div>
+                      <div className="text-xs font-normal">Intake: {company.intakeNumber}</div>
+                    </TableHead>
                   ))}
                 </TableRow>
               </TableHeader>
@@ -170,15 +173,22 @@ const InterviewSchedule = () => {
                       </TableCell>
                       <TableCell>{student?.name || "-"}</TableCell>
                       <TableCell>
-                        {!slot.booked && slot.isAvailable && (
+                        <div className="flex space-x-2">
                           <Button 
                             variant="outline" 
                             size="sm"
                             onClick={() => setSelectedSlot(slot)}
                           >
-                            Book
+                            {slot.booked ? "Edit" : "Book"}
                           </Button>
-                        )}
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => removeTimeslot(slot.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -193,7 +203,7 @@ const InterviewSchedule = () => {
         <Dialog open={!!selectedSlot} onOpenChange={(open) => !open && setSelectedSlot(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Book Interview Slot</DialogTitle>
+              <DialogTitle>{selectedSlot.booked ? "Edit" : "Book"} Interview Slot</DialogTitle>
             </DialogHeader>
             <div className="py-4 space-y-4">
               <div>
@@ -208,7 +218,7 @@ const InterviewSchedule = () => {
                 <p className="font-medium">Select Student:</p>
                 <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a student" />
+                    <SelectValue placeholder={selectedSlot.booked ? getStudentById(selectedSlot.studentId || "")?.name || "Select a student" : "Select a student"} />
                   </SelectTrigger>
                   <SelectContent>
                     {students.map(student => (

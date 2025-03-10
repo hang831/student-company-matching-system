@@ -267,13 +267,21 @@ export const useInternshipSystem = () => {
       return false;
     }
     
-    if (slot.booked) {
-      toast({
-        title: "Error",
-        description: "Cannot remove a booked slot.",
-        variant: "destructive",
-      });
-      return false;
+    // Remove from student booked interviews if it was booked
+    if (slot.booked && slot.studentId) {
+      setStudents(
+        students.map(student => {
+          if (student.id === slot.studentId) {
+            return {
+              ...student,
+              bookedInterviews: student.bookedInterviews.filter(
+                interview => interview.id !== slotId
+              )
+            };
+          }
+          return student;
+        })
+      );
     }
     
     // Remove from global slots
@@ -344,13 +352,21 @@ export const useInternshipSystem = () => {
       return false;
     }
 
-    if (slot.booked) {
-      toast({
-        title: "Error",
-        description: "This slot is already booked.",
-        variant: "destructive",
-      });
-      return false;
+    // If this slot was previously booked by another student, update that student's bookings
+    if (slot.booked && slot.studentId && slot.studentId !== studentId) {
+      setStudents(
+        students.map((student) => {
+          if (student.id === slot.studentId) {
+            return {
+              ...student,
+              bookedInterviews: student.bookedInterviews.filter(
+                interview => interview.id !== slotId
+              ),
+            };
+          }
+          return student;
+        })
+      );
     }
 
     if (!slot.isAvailable) {
@@ -381,21 +397,37 @@ export const useInternshipSystem = () => {
       })
     );
 
+    // If the student already has this slot booked, don't duplicate it
     setStudents(
       students.map((student) => {
         if (student.id === studentId) {
-          return {
-            ...student,
-            bookedInterviews: [...student.bookedInterviews, updatedSlot],
-          };
+          const hasBooking = student.bookedInterviews.some(
+            interview => interview.id === slotId
+          );
+          
+          if (hasBooking) {
+            return {
+              ...student,
+              bookedInterviews: student.bookedInterviews.map(
+                interview => interview.id === slotId ? updatedSlot : interview
+              ),
+            };
+          } else {
+            return {
+              ...student,
+              bookedInterviews: [...student.bookedInterviews, updatedSlot],
+            };
+          }
         }
         return student;
       })
     );
 
     toast({
-      title: "Interview booked",
-      description: "Interview slot has been booked successfully.",
+      title: slot.booked ? "Interview updated" : "Interview booked",
+      description: slot.booked 
+        ? "Interview booking has been updated successfully." 
+        : "Interview slot has been booked successfully.",
     });
     return true;
   };
