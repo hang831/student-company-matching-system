@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useInternshipSystem } from "@/hooks/useInternshipSystem";
 import { format } from "date-fns";
@@ -30,14 +31,14 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
     const refreshData = () => {
       const refreshedCompany = getCompanyById(company.id);
       if (refreshedCompany) {
-        if (activeTab !== "details") {
-          // Only update if we're not on details tab to avoid losing edits
-          setEditedCompany(prevCompany => {
-            // Create a new company object with refreshed data but preserve any edits
-            const updatedCompany = JSON.parse(JSON.stringify(refreshedCompany));
-            return activeTab === "details" ? prevCompany : updatedCompany;
-          });
-        }
+        // Only update slots data to preserve form edits
+        setEditedCompany(prevCompany => {
+          // Create a deep copy of the previous state to avoid mutation
+          const updatedCompany = JSON.parse(JSON.stringify(prevCompany));
+          // Only update availableSlots to preserve edits in details tab
+          updatedCompany.availableSlots = JSON.parse(JSON.stringify(refreshedCompany.availableSlots));
+          return updatedCompany;
+        });
       }
     };
     
@@ -46,7 +47,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
     const intervalId = setInterval(refreshData, 1000);
     
     return () => clearInterval(intervalId);
-  }, [company.id, getCompanyById, activeTab]);
+  }, [company.id, getCompanyById]);
 
   const handleInputChange = (field: keyof Company, value: string | number) => {
     setEditedCompany(prev => ({
@@ -56,20 +57,19 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
   };
 
   const handleSave = () => {
-    // Create a deep copy to ensure we're not sharing the same object reference
+    // Ensure we're working with a clean deep copy
     const companyToUpdate = JSON.parse(JSON.stringify(editedCompany));
     
-    // Make sure we keep the availableSlots from the original company
-    // This prevents losing slot data that might have been refreshed in the background
+    // Make sure we have the latest availableSlots data from the system
     const currentCompany = getCompanyById(company.id);
     if (currentCompany) {
       companyToUpdate.availableSlots = JSON.parse(JSON.stringify(currentCompany.availableSlots));
     }
     
-    // Call the update function
+    // Call the update function with our updated company object
     updateCompany(companyToUpdate);
     
-    // Close the dialog
+    // Close the dialog after saving
     onClose();
   };
 
