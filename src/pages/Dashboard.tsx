@@ -13,6 +13,7 @@ import { Download, Upload, FileSpreadsheet, RefreshCcw, Settings } from "lucide-
 import { downloadTemplate, generateCompanyTemplate, generateStudentTemplate, generatePreferencesTemplate, parseCSV, mapCSVToCompanyData, mapCSVToStudentData, mapCSVToPreferencesData } from "@/utils/excelUtils";
 import { toast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 const Dashboard = () => {
   const {
     importCompanies,
@@ -66,13 +67,20 @@ const Dashboard = () => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    
     const reader = new FileReader();
-    reader.onload = e => {
+    reader.onload = async (e) => {
       try {
         const csvContent = e.target?.result as string;
+        console.log("CSV Content:", csvContent); // Debug log
+        
         if (importType === "companies") {
           const parsedData = parseCSV(csvContent);
+          console.log("Parsed Company Data:", parsedData); // Debug log
+          
           const companyData = mapCSVToCompanyData(parsedData);
+          console.log("Mapped Company Data:", companyData); // Debug log
+          
           importCompanies(companyData);
           toast({
             title: "Import Successful",
@@ -80,7 +88,11 @@ const Dashboard = () => {
           });
         } else if (importType === "students") {
           const parsedData = parseCSV(csvContent);
+          console.log("Parsed Student Data:", parsedData); // Debug log
+          
           const studentData = mapCSVToStudentData(parsedData);
+          console.log("Mapped Student Data:", studentData); // Debug log
+          
           importStudents(studentData);
           toast({
             title: "Import Successful",
@@ -88,20 +100,28 @@ const Dashboard = () => {
           });
         } else {
           const parsedData = parseCSV(csvContent);
+          console.log("Parsed Preferences Data:", parsedData); // Debug log
+          
           const preferencesData = mapCSVToPreferencesData(parsedData);
+          console.log("Mapped Preferences Data:", preferencesData); // Debug log
+          
           importPreferences(preferencesData);
           toast({
             title: "Import Successful",
             description: `Student preferences imported successfully.`
           });
         }
+        
         setIsImportDialogOpen(false);
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
 
-        // Force a re-render after import
-        handleRefresh();
+        // Force a re-render after import with a small delay to ensure state updates
+        setTimeout(() => {
+          handleRefresh();
+        }, 100);
+        
       } catch (error) {
         console.error("Import error:", error);
         toast({
@@ -208,7 +228,6 @@ const Dashboard = () => {
             <TabsTrigger value="schedule">Interview Schedule</TabsTrigger>
             <TabsTrigger value="offers">Offers</TabsTrigger>
           </TabsList>
-          {/* Force re-render of all tab contents using the key prop */}
           <TabsContent value="companies" key={`companies-${forceRender}`}>
             <CompanyList />
           </TabsContent>

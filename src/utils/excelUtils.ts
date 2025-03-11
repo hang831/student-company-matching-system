@@ -78,6 +78,7 @@ export function parseCSV<T>(csv: string): T[] {
     
     headers.forEach((header, index) => {
       if (index < values.length) {
+        // Normalize header names by converting to lowercase and removing spaces
         obj[header.toLowerCase().replace(/\s+/g, '')] = values[index];
       }
     });
@@ -85,38 +86,54 @@ export function parseCSV<T>(csv: string): T[] {
     results.push(obj as T);
   }
   
+  console.log("Parse CSV Results:", results); // Debug log
   return results;
 }
 
 // Map CSV data to company structure
 export const mapCSVToCompanyData = (csvData: any[]): CompanyImportData[] => {
-  return csvData.map(row => ({
-    name: row.name || "",
-    description: row.description || "",
-    intakeNumber: parseInt(row.intakenumber || "0", 10) || 1,
-    interviewPlace: row.interviewplace || "",
-    contactPerson: row.contactperson || "",
-    allowance: row.allowance || "",
-    remarks: row.remarks || ""
-  }));
+  console.log("Mapping CSV to company data:", csvData); // Debug log
+  return csvData.map(row => {
+    const result = {
+      name: row.name || "",
+      description: row.description || "",
+      intakeNumber: parseInt(row.intakenumber || "0", 10) || 1,
+      interviewPlace: row.interviewplace || "",
+      contactPerson: row.contactperson || "",
+      allowance: row.allowance || "",
+      remarks: row.remarks || ""
+    };
+    console.log("Mapped company:", result); // Debug log
+    return result;
+  });
 };
 
 // Map CSV data to student structure
 export const mapCSVToStudentData = (csvData: any[]): StudentImportData[] => {
-  return csvData.map(row => ({
-    name: row.name || "",
-    email: row.email || "",
-    studentId: row.studentid || "",
-    tel: row.telephone || "",
-    gpa: row.gpa || ""
-  }));
+  console.log("Mapping CSV to student data:", csvData); // Debug log
+  return csvData.map(row => {
+    const result = {
+      name: row.name || "",
+      email: row.email || "",
+      studentId: row.studentid || "",
+      tel: row.telephone || "",
+      gpa: row.gpa || ""
+    };
+    console.log("Mapped student:", result); // Debug log
+    return result;
+  });
 };
 
 // Map CSV data to student preferences structure
 export const mapCSVToPreferencesData = (csvData: any[]): PreferenceImportData[] => {
-  return csvData.map(row => ({
-    studentId: row.studentid || "",
-    companyName: row.companyname || "",
-    rank: parseInt(row.preferencerank || "0", 10) || 1
-  }));
+  console.log("Mapping CSV to preferences data:", csvData); // Debug log
+  return csvData.map(row => {
+    const result = {
+      studentId: row.studentid || "",
+      companyName: row.companyname || "",
+      rank: parseInt(row.preferencerank || "0", 10) || 1
+    };
+    console.log("Mapped preference:", result); // Debug log
+    return result;
+  });
 };

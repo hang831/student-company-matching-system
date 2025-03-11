@@ -482,13 +482,25 @@ export const useInternshipSystem = () => {
         return;
       }
       
+      console.log("Importing companies:", companyDataList); // Debug log
+      
+      // Generate unique IDs for new companies
       const newCompanies = companyDataList.map(companyData => ({
         ...companyData,
         id: `c${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         availableSlots: []
       }));
       
-      setCompanies(prevCompanies => [...prevCompanies, ...newCompanies]);
+      // Update state with new companies
+      setCompanies(prevCompanies => {
+        const updatedCompanies = [...prevCompanies, ...newCompanies];
+        console.log("Updated companies:", updatedCompanies); // Debug log
+        
+        // Save to local storage immediately
+        localStorage.setItem('companies', JSON.stringify(updatedCompanies));
+        
+        return updatedCompanies;
+      });
       
       toast({
         title: "Companies Imported",
@@ -516,6 +528,9 @@ export const useInternshipSystem = () => {
         return;
       }
       
+      console.log("Importing students:", studentDataList); // Debug log
+      
+      // Generate unique IDs for new students
       const newStudents = studentDataList.map(studentData => ({
         ...studentData,
         id: `s${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -523,7 +538,16 @@ export const useInternshipSystem = () => {
         bookedInterviews: []
       }));
       
-      setStudents(prevStudents => [...prevStudents, ...newStudents]);
+      // Update state with new students
+      setStudents(prevStudents => {
+        const updatedStudents = [...prevStudents, ...newStudents];
+        console.log("Updated students:", updatedStudents); // Debug log
+        
+        // Save to local storage immediately
+        localStorage.setItem('students', JSON.stringify(updatedStudents));
+        
+        return updatedStudents;
+      });
       
       toast({
         title: "Students Imported",
