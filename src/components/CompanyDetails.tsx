@@ -20,15 +20,21 @@ interface CompanyDetailsProps {
 
 const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
   const { updateCompany, getStudentById, toggleSlotAvailability, getCompanyById } = useInternshipSystem();
-  const [editedCompany, setEditedCompany] = useState<Company>(JSON.parse(JSON.stringify(company)));
+  const [editedCompany, setEditedCompany] = useState<Company>(() => {
+    // Create a deep copy of the company object
+    return JSON.parse(JSON.stringify(company));
+  });
   const [activeTab, setActiveTab] = useState("details");
   
   // Refresh company data whenever it changes or tab changes
   useEffect(() => {
     const refreshData = () => {
       const refreshedCompany = getCompanyById(company.id);
-      if (refreshedCompany && activeTab !== "details") {
-        setEditedCompany(JSON.parse(JSON.stringify(refreshedCompany)));
+      if (refreshedCompany) {
+        if (activeTab !== "details") {
+          // Only update if we're not on details tab to avoid losing edits
+          setEditedCompany(JSON.parse(JSON.stringify(refreshedCompany)));
+        }
       }
     };
     

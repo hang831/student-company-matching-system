@@ -263,15 +263,13 @@ const Dashboard = () => {
             <StudentList maxPreferences={maxPreferences} />
           </TabsContent>
           <TabsContent value="schedule" key={`schedule-${forceRender}`}>
-            {activeTab === "schedule" && (
-              <div>
-                <InterviewSortingOptions 
-                  sortMode={interviewSortMode} 
-                  onSortChange={setInterviewSortMode} 
-                />
-                <InterviewSchedule sortMode={interviewSortMode} />
-              </div>
-            )}
+            <div>
+              <InterviewSortingOptions 
+                sortMode={interviewSortMode} 
+                onSortChange={setInterviewSortMode} 
+              />
+              <InterviewSchedule sortMode={interviewSortMode} />
+            </div>
           </TabsContent>
           <TabsContent value="offers" key={`offers-${forceRender}`}>
             <OffersManagement />
