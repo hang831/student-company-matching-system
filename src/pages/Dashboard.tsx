@@ -36,6 +36,7 @@ const Dashboard = () => {
   useEffect(() => {
     localStorage.setItem('maxPreferences', maxPreferences.toString());
   }, [maxPreferences]);
+  
   const handleDownloadTemplate = (type: "companies" | "students" | "preferences") => {
     if (type === "companies") {
       const template = generateCompanyTemplate();
@@ -60,10 +61,12 @@ const Dashboard = () => {
       });
     }
   };
+  
   const handleImportClick = (type: "companies" | "students" | "preferences") => {
     setImportType(type);
     setIsImportDialogOpen(true);
   };
+  
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -81,6 +84,15 @@ const Dashboard = () => {
           const companyData = mapCSVToCompanyData(parsedData);
           console.log("Mapped Company Data:", companyData); // Debug log
           
+          if (companyData.length === 0) {
+            toast({
+              title: "Import Failed",
+              description: "No valid company data found in the file.",
+              variant: "destructive"
+            });
+            return;
+          }
+          
           importCompanies(companyData);
           toast({
             title: "Import Successful",
@@ -92,6 +104,15 @@ const Dashboard = () => {
           
           const studentData = mapCSVToStudentData(parsedData);
           console.log("Mapped Student Data:", studentData); // Debug log
+          
+          if (studentData.length === 0) {
+            toast({
+              title: "Import Failed",
+              description: "No valid student data found in the file.",
+              variant: "destructive"
+            });
+            return;
+          }
           
           importStudents(studentData);
           toast({
@@ -105,6 +126,15 @@ const Dashboard = () => {
           const preferencesData = mapCSVToPreferencesData(parsedData);
           console.log("Mapped Preferences Data:", preferencesData); // Debug log
           
+          if (preferencesData.length === 0) {
+            toast({
+              title: "Import Failed",
+              description: "No valid preference data found in the file.",
+              variant: "destructive"
+            });
+            return;
+          }
+          
           importPreferences(preferencesData);
           toast({
             title: "Import Successful",
@@ -117,10 +147,10 @@ const Dashboard = () => {
           fileInputRef.current.value = '';
         }
 
-        // Force a re-render after import with a small delay to ensure state updates
-        setTimeout(() => {
-          handleRefresh();
-        }, 100);
+        // Force a refresh immediately after import
+        refresh();
+        // Then force a UI re-render
+        setForceRender(prev => prev + 1);
         
       } catch (error) {
         console.error("Import error:", error);
@@ -133,6 +163,7 @@ const Dashboard = () => {
     };
     reader.readAsText(file);
   };
+  
   const handleRefresh = () => {
     refresh();
     setForceRender(prev => prev + 1); // Increment to force re-render
@@ -141,6 +172,7 @@ const Dashboard = () => {
       description: "The system data has been refreshed."
     });
   };
+  
   return <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col space-y-6">
         <div className="flex flex-col space-y-2">
@@ -207,8 +239,6 @@ const Dashboard = () => {
               <Upload className="mr-2 h-4 w-4" /> Import Students
             </Button>
             
-            
-            
             <Button variant="outline" onClick={() => handleDownloadTemplate("companies")}>
               <FileSpreadsheet className="mr-2 h-4 w-4" /> Company Template
             </Button>
@@ -216,7 +246,6 @@ const Dashboard = () => {
             <Button variant="outline" onClick={() => handleDownloadTemplate("students")}>
               <FileSpreadsheet className="mr-2 h-4 w-4" /> Student Template
             </Button>
-            
             
           </div>
         </div>
@@ -244,4 +273,5 @@ const Dashboard = () => {
       </div>
     </div>;
 };
+
 export default Dashboard;

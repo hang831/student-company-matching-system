@@ -83,7 +83,10 @@ export function parseCSV<T>(csv: string): T[] {
       }
     });
     
-    results.push(obj as T);
+    // Only add non-empty objects
+    if (Object.keys(obj).length > 0) {
+      results.push(obj as T);
+    }
   }
   
   console.log("Parse CSV Results:", results); // Debug log

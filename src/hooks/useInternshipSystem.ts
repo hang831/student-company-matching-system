@@ -491,16 +491,12 @@ export const useInternshipSystem = () => {
         availableSlots: []
       }));
       
-      // Update state with new companies
-      setCompanies(prevCompanies => {
-        const updatedCompanies = [...prevCompanies, ...newCompanies];
-        console.log("Updated companies:", updatedCompanies); // Debug log
-        
-        // Save to local storage immediately
-        localStorage.setItem('companies', JSON.stringify(updatedCompanies));
-        
-        return updatedCompanies;
-      });
+      // Update state with new companies - REPLACE existing companies instead of adding to them
+      setCompanies(newCompanies);
+      console.log("Companies after import:", newCompanies); // Debug log
+      
+      // Save to local storage immediately
+      localStorage.setItem('companies', JSON.stringify(newCompanies));
       
       toast({
         title: "Companies Imported",
@@ -538,16 +534,12 @@ export const useInternshipSystem = () => {
         bookedInterviews: []
       }));
       
-      // Update state with new students
-      setStudents(prevStudents => {
-        const updatedStudents = [...prevStudents, ...newStudents];
-        console.log("Updated students:", updatedStudents); // Debug log
-        
-        // Save to local storage immediately
-        localStorage.setItem('students', JSON.stringify(updatedStudents));
-        
-        return updatedStudents;
-      });
+      // Update state with new students - REPLACE existing students instead of adding to them
+      setStudents(newStudents);
+      console.log("Students after import:", newStudents); // Debug log
+      
+      // Save to local storage immediately
+      localStorage.setItem('students', JSON.stringify(newStudents));
       
       toast({
         title: "Students Imported",
@@ -618,6 +610,9 @@ export const useInternshipSystem = () => {
       
       // Update the state with all changes at once
       setStudents(updatedStudents);
+      
+      // Save to local storage immediately
+      localStorage.setItem('students', JSON.stringify(updatedStudents));
       
       toast({
         title: "Preferences Imported",
