@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useInternshipSystem } from "@/hooks/useInternshipSystem";
 import { format } from "date-fns";
@@ -33,7 +32,11 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
       if (refreshedCompany) {
         if (activeTab !== "details") {
           // Only update if we're not on details tab to avoid losing edits
-          setEditedCompany(JSON.parse(JSON.stringify(refreshedCompany)));
+          setEditedCompany(prevCompany => {
+            // Create a new company object with refreshed data but preserve any edits
+            const updatedCompany = JSON.parse(JSON.stringify(refreshedCompany));
+            return activeTab === "details" ? prevCompany : updatedCompany;
+          });
         }
       }
     };
@@ -55,7 +58,18 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
   const handleSave = () => {
     // Create a deep copy to ensure we're not sharing the same object reference
     const companyToUpdate = JSON.parse(JSON.stringify(editedCompany));
+    
+    // Make sure we keep the availableSlots from the original company
+    // This prevents losing slot data that might have been refreshed in the background
+    const currentCompany = getCompanyById(company.id);
+    if (currentCompany) {
+      companyToUpdate.availableSlots = JSON.parse(JSON.stringify(currentCompany.availableSlots));
+    }
+    
+    // Call the update function
     updateCompany(companyToUpdate);
+    
+    // Close the dialog
     onClose();
   };
 
@@ -64,7 +78,13 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
       // Update the company data after toggling
       const refreshedCompany = getCompanyById(company.id);
       if (refreshedCompany) {
-        setEditedCompany(JSON.parse(JSON.stringify(refreshedCompany)));
+        setEditedCompany(prevState => {
+          // Create a deep copy of the previous state
+          const updatedCompany = JSON.parse(JSON.stringify(prevState));
+          // Update only the availableSlots property
+          updatedCompany.availableSlots = JSON.parse(JSON.stringify(refreshedCompany.availableSlots));
+          return updatedCompany;
+        });
       }
     }
   };
