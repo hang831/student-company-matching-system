@@ -28,6 +28,7 @@ const Dashboard = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importType, setImportType] = useState<"companies" | "students" | "preferences">("companies");
   const [activeTab, setActiveTab] = useState("companies");
+  const [forceRender, setForceRender] = useState(0); // Add a force render counter
   
   const handleDownloadTemplate = (type: "companies" | "students" | "preferences") => {
     if (type === "companies") {
@@ -92,10 +93,14 @@ const Dashboard = () => {
             description: `Student preferences imported successfully.`,
           });
         }
+        
         setIsImportDialogOpen(false);
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
+        
+        // Force a re-render after import
+        handleRefresh();
       } catch (error) {
         console.error("Import error:", error);
         toast({
@@ -110,6 +115,7 @@ const Dashboard = () => {
   
   const handleRefresh = () => {
     refresh();
+    setForceRender(prev => prev + 1); // Increment to force re-render
     toast({
       title: "Refreshed",
       description: "The system data has been refreshed.",
@@ -219,16 +225,17 @@ const Dashboard = () => {
             <TabsTrigger value="schedule">Interview Schedule</TabsTrigger>
             <TabsTrigger value="offers">Offers</TabsTrigger>
           </TabsList>
-          <TabsContent value="companies">
+          {/* Force re-render of all tab contents using the key prop */}
+          <TabsContent value="companies" key={`companies-${forceRender}`}>
             <CompanyList />
           </TabsContent>
-          <TabsContent value="students">
+          <TabsContent value="students" key={`students-${forceRender}`}>
             <StudentList />
           </TabsContent>
-          <TabsContent value="schedule">
+          <TabsContent value="schedule" key={`schedule-${forceRender}`}>
             <InterviewSchedule />
           </TabsContent>
-          <TabsContent value="offers">
+          <TabsContent value="offers" key={`offers-${forceRender}`}>
             <OffersManagement />
           </TabsContent>
         </Tabs>

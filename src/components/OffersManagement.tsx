@@ -24,22 +24,33 @@ const OffersManagement = () => {
   const { companies, students, slots } = useInternshipSystem();
   const [offerStatuses, setOfferStatuses] = useState<Record<string, Record<string, OfferStatus>>>({});
   
-  // Initialize offer statuses for all booked interviews on first load
+  // Initialize offer statuses for all booked interviews and load from localStorage on first load
   useEffect(() => {
-    const bookedSlots = slots.filter(slot => slot.booked);
-    const statusMap: Record<string, Record<string, OfferStatus>> = {};
+    const savedStatuses = localStorage.getItem('offerStatuses');
     
-    bookedSlots.forEach(slot => {
-      if (slot.studentId && slot.companyId) {
-        if (!statusMap[slot.studentId]) {
-          statusMap[slot.studentId] = {};
+    if (savedStatuses) {
+      setOfferStatuses(JSON.parse(savedStatuses));
+    } else {
+      const bookedSlots = slots.filter(slot => slot.booked);
+      const statusMap: Record<string, Record<string, OfferStatus>> = {};
+      
+      bookedSlots.forEach(slot => {
+        if (slot.studentId && slot.companyId) {
+          if (!statusMap[slot.studentId]) {
+            statusMap[slot.studentId] = {};
+          }
+          statusMap[slot.studentId][slot.companyId] = "pending";
         }
-        statusMap[slot.studentId][slot.companyId] = "pending";
-      }
-    });
-    
-    setOfferStatuses(statusMap);
+      });
+      
+      setOfferStatuses(statusMap);
+    }
   }, [slots]);
+  
+  // Save offer statuses to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('offerStatuses', JSON.stringify(offerStatuses));
+  }, [offerStatuses]);
 
   // Handle offer status change
   const handleStatusChange = (studentId: string, companyId: string, status: OfferStatus) => {

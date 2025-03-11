@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Company, Student, InterviewSlot, StudentPreference, CompanyImportData, StudentImportData, PreferenceImportData } from "@/types";
 import { mockCompanies, mockStudents, interviewSlots } from "@/data/mockData";
@@ -326,6 +325,16 @@ export const useInternshipSystem = () => {
     setStudents(
       students.map((student) => {
         if (student.id === preference.studentId) {
+          // If rank is 0, remove the preference
+          if (preference.rank === 0) {
+            return {
+              ...student,
+              preferences: student.preferences.filter(
+                (pref) => pref.companyId !== preference.companyId
+              ),
+            };
+          }
+          
           const existingPrefIndex = student.preferences.findIndex(
             (pref) => pref.companyId === preference.companyId
           );
@@ -472,7 +481,7 @@ export const useInternshipSystem = () => {
     setCompanies([...companies, ...newCompanies]);
     
     // Force refresh to update UI
-    setTimeout(refresh, 100);
+    refresh();
   };
   
   // Import students from CSV data
@@ -487,16 +496,18 @@ export const useInternshipSystem = () => {
     setStudents([...students, ...newStudents]);
     
     // Force refresh to update UI
-    setTimeout(refresh, 100);
+    refresh();
   };
   
   // Import student preferences from CSV data
   const importPreferences = (preferencesDataList: PreferenceImportData[]) => {
+    let updatedStudents = [...students];
+
     // Process each preference in the import data
     preferencesDataList.forEach(prefData => {
       // Find student by student ID
-      const student = students.find(s => s.studentId === prefData.studentId);
-      if (!student) {
+      const studentIndex = updatedStudents.findIndex(s => s.studentId === prefData.studentId);
+      if (studentIndex === -1) {
         console.warn(`Student with ID ${prefData.studentId} not found`);
         return;
       }
@@ -510,17 +521,34 @@ export const useInternshipSystem = () => {
       
       // Create the preference
       const preference: StudentPreference = {
-        studentId: student.id,
+        studentId: updatedStudents[studentIndex].id,
         companyId: company.id,
         rank: prefData.rank
       };
       
-      // Add the preference
-      addStudentPreference(preference);
+      // Add the preference directly to the student
+      const student = updatedStudents[studentIndex];
+      const existingPrefIndex = student.preferences.findIndex(
+        (pref) => pref.companyId === preference.companyId
+      );
+      
+      if (existingPrefIndex >= 0) {
+        student.preferences[existingPrefIndex] = preference;
+      } else {
+        student.preferences.push(preference);
+      }
+    });
+    
+    // Update the state with all changes at once
+    setStudents(updatedStudents);
+    
+    toast({
+      title: "Preferences Imported",
+      description: `Student preferences have been imported successfully.`,
     });
     
     // Force refresh to update UI
-    setTimeout(refresh, 100);
+    refresh();
   };
 
   return {

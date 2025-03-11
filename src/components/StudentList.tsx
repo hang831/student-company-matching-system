@@ -9,16 +9,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { User, Star, IdCard, Phone, BookOpen, Plus, Edit, Trash } from "lucide-react";
-import { Student } from "@/types";
+import { User, Star, IdCard, Phone, BookOpen, Plus, Edit, Trash, Upload, FileSpreadsheet } from "lucide-react";
+import { Student, PreferenceImportData } from "@/types";
+import { downloadTemplate, generatePreferencesTemplate, parseCSV, mapCSVToPreferencesData } from "@/utils/excelUtils";
 
 const StudentList = () => {
-  const { students, companies, addStudentPreference, updateStudent, addStudent, deleteStudent } = useInternshipSystem();
+  const { students, companies, addStudentPreference, updateStudent, addStudent, deleteStudent, importPreferences } = useInternshipSystem();
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [editedStudent, setEditedStudent] = useState<Student | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
+  const [maxPreferences, setMaxPreferences] = useState(5);
   const [newStudent, setNewStudent] = useState({
     name: "",
     email: "",
@@ -27,8 +30,11 @@ const StudentList = () => {
     gpa: "",
   });
   
-  const handlePreferenceChange = (companyId: string, rank: number) => {
+  const handlePreferenceChange = (companyId: string, value: string) => {
     if (selectedStudent) {
+      // If value is empty string, reset preference (rank 0 will be handled in useInternshipSystem)
+      const rank = value === "" ? 0 : parseInt(value, 10);
+      
       addStudentPreference({
         studentId: selectedStudent.id,
         companyId,
@@ -66,7 +72,7 @@ const StudentList = () => {
   };
 
   const handleAddStudent = () => {
-    if (newStudent.name && newStudent.email && newStudent.studentId) {
+    if (newStudent.name && newStudent.email && newStudent.studentId && newStudent.gpa) {
       addStudent(newStudent);
       setNewStudent({
         name: "",
@@ -85,79 +91,156 @@ const StudentList = () => {
       setStudentToDelete(null);
     }
   };
+  
+  const handleDownloadPreferencesTemplate = () => {
+    const template = generatePreferencesTemplate();
+    downloadTemplate(template, "preferences_template.csv");
+  };
+  
+  const handleImportPreferences = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const csvContent = e.target?.result as string;
+        const parsedData = parseCSV(csvContent);
+        const preferencesData = mapCSVToPreferencesData(parsedData);
+        importPreferences(preferencesData);
+        setIsImportDialogOpen(false);
+        if (e.target) {
+          (e.target as any).value = '';
+        }
+      } catch (error) {
+        console.error("Import error:", error);
+      }
+    };
+    reader.readAsText(file);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold tracking-tight">Students</h2>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Student
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Student</DialogTitle>
-              <DialogDescription>Complete the form to add a new student.</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  value={newStudent.name}
-                  onChange={(e) =>
-                    setNewStudent({ ...newStudent, name: e.target.value })
-                  }
-                />
+        <div className="flex gap-2">
+          <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Upload className="mr-2 h-4 w-4" />
+                Import Preferences
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Import Student Preferences</DialogTitle>
+                <DialogDescription>
+                  Upload a CSV file to import student preferences in bulk.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4 space-y-4">
+                <div>
+                  <Label htmlFor="preferencesFile">Select CSV File</Label>
+                  <input
+                    type="file"
+                    id="preferencesFile"
+                    accept=".csv"
+                    onChange={handleImportPreferences}
+                    className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100 mt-1"
+                  />
+                </div>
+                <div>
+                  <p className="text-sm mb-2">Need a template?</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleDownloadPreferencesTemplate}
+                  >
+                    <FileSpreadsheet className="mr-2 h-4 w-4" /> Download Template
+                  </Button>
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newStudent.email}
-                  onChange={(e) =>
-                    setNewStudent({ ...newStudent, email: e.target.value })
-                  }
-                />
+            </DialogContent>
+          </Dialog>
+          
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Student
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Student</DialogTitle>
+                <DialogDescription>Complete the form to add a new student.</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="name"
+                    value={newStudent.name}
+                    onChange={(e) =>
+                      setNewStudent({ ...newStudent, name: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newStudent.email}
+                    onChange={(e) =>
+                      setNewStudent({ ...newStudent, email: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="studentId">Student ID <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="studentId"
+                    value={newStudent.studentId}
+                    onChange={(e) =>
+                      setNewStudent({ ...newStudent, studentId: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="tel">Telephone (Optional)</Label>
+                  <Input
+                    id="tel"
+                    value={newStudent.tel}
+                    onChange={(e) =>
+                      setNewStudent({ ...newStudent, tel: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="gpa">GPA <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="gpa"
+                    value={newStudent.gpa}
+                    onChange={(e) =>
+                      setNewStudent({ ...newStudent, gpa: e.target.value })
+                    }
+                    required
+                  />
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="studentId">Student ID</Label>
-                <Input
-                  id="studentId"
-                  value={newStudent.studentId}
-                  onChange={(e) =>
-                    setNewStudent({ ...newStudent, studentId: e.target.value })
-                  }
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="tel">Telephone</Label>
-                <Input
-                  id="tel"
-                  value={newStudent.tel}
-                  onChange={(e) =>
-                    setNewStudent({ ...newStudent, tel: e.target.value })
-                  }
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="gpa">GPA</Label>
-                <Input
-                  id="gpa"
-                  value={newStudent.gpa}
-                  onChange={(e) =>
-                    setNewStudent({ ...newStudent, gpa: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-            <Button onClick={handleAddStudent}>Add Student</Button>
-          </DialogContent>
-        </Dialog>
+              <Button 
+                onClick={handleAddStudent}
+                disabled={!newStudent.name || !newStudent.email || !newStudent.studentId || !newStudent.gpa}
+              >
+                Add Student
+              </Button>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -281,6 +364,25 @@ const StudentList = () => {
                 </p>
               </div>
               
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor="maxPreferences">Max Preferences:</Label>
+                  <Select 
+                    value={maxPreferences.toString()} 
+                    onValueChange={(value) => setMaxPreferences(parseInt(value))}
+                  >
+                    <SelectTrigger className="w-20">
+                      <SelectValue placeholder="Max" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                        <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -299,17 +401,18 @@ const StudentList = () => {
                           </Label>
                           <Select 
                             value={getPreferenceRank(selectedStudent.id, company.id)?.toString() || ""}
-                            onValueChange={(value) => handlePreferenceChange(company.id, parseInt(value))}
+                            onValueChange={(value) => handlePreferenceChange(company.id, value)}
                           >
                             <SelectTrigger id={`rank-${company.id}`} className="w-24">
                               <SelectValue placeholder="Rank" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="1">1 (Top)</SelectItem>
-                              <SelectItem value="2">2</SelectItem>
-                              <SelectItem value="3">3</SelectItem>
-                              <SelectItem value="4">4</SelectItem>
-                              <SelectItem value="5">5</SelectItem>
+                              <SelectItem value="">None</SelectItem>
+                              {[...Array(maxPreferences)].map((_, i) => (
+                                <SelectItem key={i+1} value={(i+1).toString()}>
+                                  {i+1} {i === 0 ? "(Top)" : ""}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
@@ -333,31 +436,34 @@ const StudentList = () => {
             </DialogHeader>
             <div className="py-4 space-y-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
                 <Input
                   id="name"
                   value={editedStudent.name}
                   onChange={(e) => setEditedStudent({...editedStudent, name: e.target.value})}
+                  required
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
                 <Input
                   id="email"
                   value={editedStudent.email}
                   onChange={(e) => setEditedStudent({...editedStudent, email: e.target.value})}
+                  required
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="studentId">Student ID</Label>
+                <Label htmlFor="studentId">Student ID <span className="text-red-500">*</span></Label>
                 <Input
                   id="studentId"
                   value={editedStudent.studentId}
                   onChange={(e) => setEditedStudent({...editedStudent, studentId: e.target.value})}
+                  required
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="tel">Telephone</Label>
+                <Label htmlFor="tel">Telephone (Optional)</Label>
                 <Input
                   id="tel"
                   value={editedStudent.tel}
@@ -365,17 +471,23 @@ const StudentList = () => {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="gpa">GPA</Label>
+                <Label htmlFor="gpa">GPA <span className="text-red-500">*</span></Label>
                 <Input
                   id="gpa"
                   value={editedStudent.gpa}
                   onChange={(e) => setEditedStudent({...editedStudent, gpa: e.target.value})}
+                  required
                 />
               </div>
             </div>
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setEditMode(false)}>Cancel</Button>
-              <Button onClick={handleSaveEdit}>Save Changes</Button>
+              <Button 
+                onClick={handleSaveEdit} 
+                disabled={!editedStudent.name || !editedStudent.email || !editedStudent.studentId || !editedStudent.gpa}
+              >
+                Save Changes
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
