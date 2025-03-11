@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CompanyList from "@/components/CompanyList";
@@ -11,21 +10,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Download, Upload, FileSpreadsheet, RefreshCcw, Settings } from "lucide-react";
-import { 
-  downloadTemplate, 
-  generateCompanyTemplate, 
-  generateStudentTemplate,
-  generatePreferencesTemplate,
-  parseCSV, 
-  mapCSVToCompanyData, 
-  mapCSVToStudentData, 
-  mapCSVToPreferencesData 
-} from "@/utils/excelUtils";
+import { downloadTemplate, generateCompanyTemplate, generateStudentTemplate, generatePreferencesTemplate, parseCSV, mapCSVToCompanyData, mapCSVToStudentData, mapCSVToPreferencesData } from "@/utils/excelUtils";
 import { toast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
 const Dashboard = () => {
-  const { importCompanies, importStudents, importPreferences, refresh } = useInternshipSystem();
+  const {
+    importCompanies,
+    importStudents,
+    importPreferences,
+    refresh
+  } = useInternshipSystem();
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -36,48 +30,44 @@ const Dashboard = () => {
     const saved = localStorage.getItem('maxPreferences');
     return saved ? parseInt(saved) : 5;
   });
-  
+
   // Save max preferences to localStorage
   useEffect(() => {
     localStorage.setItem('maxPreferences', maxPreferences.toString());
   }, [maxPreferences]);
-  
   const handleDownloadTemplate = (type: "companies" | "students" | "preferences") => {
     if (type === "companies") {
       const template = generateCompanyTemplate();
       downloadTemplate(template, "company_template.csv");
       toast({
         title: "Template Downloaded",
-        description: "Company template has been downloaded.",
+        description: "Company template has been downloaded."
       });
     } else if (type === "students") {
       const template = generateStudentTemplate();
       downloadTemplate(template, "student_template.csv");
       toast({
         title: "Template Downloaded",
-        description: "Student template has been downloaded.",
+        description: "Student template has been downloaded."
       });
     } else {
       const template = generatePreferencesTemplate();
       downloadTemplate(template, "preferences_template.csv");
       toast({
         title: "Template Downloaded",
-        description: "Student preferences template has been downloaded.",
+        description: "Student preferences template has been downloaded."
       });
     }
   };
-  
   const handleImportClick = (type: "companies" | "students" | "preferences") => {
     setImportType(type);
     setIsImportDialogOpen(true);
   };
-  
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
       try {
         const csvContent = e.target?.result as string;
         if (importType === "companies") {
@@ -86,7 +76,7 @@ const Dashboard = () => {
           importCompanies(companyData);
           toast({
             title: "Import Successful",
-            description: `${companyData.length} companies imported successfully.`,
+            description: `${companyData.length} companies imported successfully.`
           });
         } else if (importType === "students") {
           const parsedData = parseCSV(csvContent);
@@ -94,7 +84,7 @@ const Dashboard = () => {
           importStudents(studentData);
           toast({
             title: "Import Successful",
-            description: `${studentData.length} students imported successfully.`,
+            description: `${studentData.length} students imported successfully.`
           });
         } else {
           const parsedData = parseCSV(csvContent);
@@ -102,15 +92,14 @@ const Dashboard = () => {
           importPreferences(preferencesData);
           toast({
             title: "Import Successful",
-            description: `Student preferences imported successfully.`,
+            description: `Student preferences imported successfully.`
           });
         }
-        
         setIsImportDialogOpen(false);
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
-        
+
         // Force a re-render after import
         handleRefresh();
       } catch (error) {
@@ -118,24 +107,21 @@ const Dashboard = () => {
         toast({
           title: "Import Failed",
           description: "There was an error processing the file. Please check the format.",
-          variant: "destructive",
+          variant: "destructive"
         });
       }
     };
     reader.readAsText(file);
   };
-  
   const handleRefresh = () => {
     refresh();
     setForceRender(prev => prev + 1); // Increment to force re-render
     toast({
       title: "Refreshed",
-      description: "The system data has been refreshed.",
+      description: "The system data has been refreshed."
     });
   };
-  
-  return (
-    <div className="container mx-auto py-8 px-4">
+  return <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col space-y-6">
         <div className="flex flex-col space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Internship Matching System</h1>
@@ -148,26 +134,17 @@ const Dashboard = () => {
           <div className="flex items-center gap-2">
             <div className="flex items-center space-x-2 bg-gray-50 p-2 rounded-md">
               <Label htmlFor="maxPreferences" className="mr-2">Max Preferences:</Label>
-              <Select 
-                value={maxPreferences.toString()} 
-                onValueChange={(value) => setMaxPreferences(parseInt(value))}
-              >
+              <Select value={maxPreferences.toString()} onValueChange={value => setMaxPreferences(parseInt(value))}>
                 <SelectTrigger className="w-20">
                   <SelectValue placeholder="Max" />
                 </SelectTrigger>
                 <SelectContent>
-                  {[3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                    <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
-                  ))}
+                  {[3, 4, 5, 6, 7, 8, 9, 10].map(num => <SelectItem key={num} value={num.toString()}>{num}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             
-            <Button 
-              variant="outline" 
-              onClick={handleRefresh} 
-              className="bg-gray-50"
-            >
+            <Button variant="outline" onClick={handleRefresh} className="bg-gray-50">
               <RefreshCcw className="mr-2 h-4 w-4" /> Refresh Data
             </Button>
           </div>
@@ -183,44 +160,21 @@ const Dashboard = () => {
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>
-                      Import {
-                        importType === "companies" 
-                          ? "Companies" 
-                          : importType === "students" 
-                            ? "Students" 
-                            : "Student Preferences"
-                      }
+                      Import {importType === "companies" ? "Companies" : importType === "students" ? "Students" : "Student Preferences"}
                     </DialogTitle>
                     <DialogDescription>
-                      Upload a CSV file to import {
-                        importType === "companies" 
-                          ? "companies" 
-                          : importType === "students" 
-                            ? "students" 
-                            : "student preferences"
-                      } in bulk.
+                      Upload a CSV file to import {importType === "companies" ? "companies" : importType === "students" ? "students" : "student preferences"} in bulk.
                       Make sure to use the correct template format.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="py-4 space-y-4">
                     <div>
                       <Label htmlFor="file">Select CSV File</Label>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        id="file"
-                        accept=".csv"
-                        onChange={handleFileChange}
-                        className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100 mt-1"
-                      />
+                      <input ref={fileInputRef} type="file" id="file" accept=".csv" onChange={handleFileChange} className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100 mt-1" />
                     </div>
                     <div>
                       <p className="text-sm mb-2">Need a template?</p>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleDownloadTemplate(importType)}
-                      >
+                      <Button variant="outline" size="sm" onClick={() => handleDownloadTemplate(importType)}>
                         <Download className="mr-2 h-4 w-4" /> Download Template
                       </Button>
                     </div>
@@ -233,9 +187,7 @@ const Dashboard = () => {
               <Upload className="mr-2 h-4 w-4" /> Import Students
             </Button>
             
-            <Button onClick={() => handleImportClick("preferences")}>
-              <Upload className="mr-2 h-4 w-4" /> Import Preferences
-            </Button>
+            
             
             <Button variant="outline" onClick={() => handleDownloadTemplate("companies")}>
               <FileSpreadsheet className="mr-2 h-4 w-4" /> Company Template
@@ -245,9 +197,7 @@ const Dashboard = () => {
               <FileSpreadsheet className="mr-2 h-4 w-4" /> Student Template
             </Button>
             
-            <Button variant="outline" onClick={() => handleDownloadTemplate("preferences")}>
-              <FileSpreadsheet className="mr-2 h-4 w-4" /> Preferences Template
-            </Button>
+            
           </div>
         </div>
 
@@ -273,8 +223,6 @@ const Dashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Dashboard;
