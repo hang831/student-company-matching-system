@@ -20,7 +20,7 @@ interface CompanyDetailsProps {
 
 const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
   const { updateCompany, getStudentById, toggleSlotAvailability, getCompanyById } = useInternshipSystem();
-  const [editedCompany, setEditedCompany] = useState<Company>({ ...company });
+  const [editedCompany, setEditedCompany] = useState<Company>(JSON.parse(JSON.stringify(company)));
   const [activeTab, setActiveTab] = useState("details");
   
   // Refresh company data whenever it changes or tab changes
@@ -28,7 +28,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
     const refreshData = () => {
       const refreshedCompany = getCompanyById(company.id);
       if (refreshedCompany && activeTab !== "details") {
-        setEditedCompany(refreshedCompany);
+        setEditedCompany(JSON.parse(JSON.stringify(refreshedCompany)));
       }
     };
     
@@ -58,7 +58,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
       // Update the company data after toggling
       const refreshedCompany = getCompanyById(company.id);
       if (refreshedCompany) {
-        setEditedCompany(refreshedCompany);
+        setEditedCompany(JSON.parse(JSON.stringify(refreshedCompany)));
       }
     }
   };

@@ -13,6 +13,7 @@ import { Download, Upload, FileSpreadsheet, RefreshCcw, Settings } from "lucide-
 import { downloadTemplate, generateCompanyTemplate, generateStudentTemplate, generatePreferencesTemplate, parseCSV, mapCSVToCompanyData, mapCSVToStudentData, mapCSVToPreferencesData } from "@/utils/excelUtils";
 import { toast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import InterviewSortingOptions from "@/components/InterviewSortingOptions";
 
 const Dashboard = () => {
   const {
@@ -26,13 +27,13 @@ const Dashboard = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importType, setImportType] = useState<"companies" | "students" | "preferences">("companies");
   const [activeTab, setActiveTab] = useState("companies");
-  const [forceRender, setForceRender] = useState(0); // Add a force render counter
+  const [forceRender, setForceRender] = useState(0);
   const [maxPreferences, setMaxPreferences] = useState(() => {
     const saved = localStorage.getItem('maxPreferences');
     return saved ? parseInt(saved) : 5;
   });
+  const [interviewSortMode, setInterviewSortMode] = useState("date");
 
-  // Save max preferences to localStorage
   useEffect(() => {
     localStorage.setItem('maxPreferences', maxPreferences.toString());
   }, [maxPreferences]);
@@ -75,14 +76,14 @@ const Dashboard = () => {
     reader.onload = async (e) => {
       try {
         const csvContent = e.target?.result as string;
-        console.log("CSV Content:", csvContent); // Debug log
+        console.log("CSV Content:", csvContent);
         
         if (importType === "companies") {
           const parsedData = parseCSV(csvContent);
-          console.log("Parsed Company Data:", parsedData); // Debug log
+          console.log("Parsed Company Data:", parsedData);
           
           const companyData = mapCSVToCompanyData(parsedData);
-          console.log("Mapped Company Data:", companyData); // Debug log
+          console.log("Mapped Company Data:", companyData);
           
           if (companyData.length === 0) {
             toast({
@@ -100,10 +101,10 @@ const Dashboard = () => {
           });
         } else if (importType === "students") {
           const parsedData = parseCSV(csvContent);
-          console.log("Parsed Student Data:", parsedData); // Debug log
+          console.log("Parsed Student Data:", parsedData);
           
           const studentData = mapCSVToStudentData(parsedData);
-          console.log("Mapped Student Data:", studentData); // Debug log
+          console.log("Mapped Student Data:", studentData);
           
           if (studentData.length === 0) {
             toast({
@@ -121,10 +122,10 @@ const Dashboard = () => {
           });
         } else {
           const parsedData = parseCSV(csvContent);
-          console.log("Parsed Preferences Data:", parsedData); // Debug log
+          console.log("Parsed Preferences Data:", parsedData);
           
           const preferencesData = mapCSVToPreferencesData(parsedData);
-          console.log("Mapped Preferences Data:", preferencesData); // Debug log
+          console.log("Mapped Preferences Data:", preferencesData);
           
           if (preferencesData.length === 0) {
             toast({
@@ -147,9 +148,7 @@ const Dashboard = () => {
           fileInputRef.current.value = '';
         }
 
-        // Force a refresh immediately after import
         refresh();
-        // Then force a UI re-render
         setForceRender(prev => prev + 1);
         
       } catch (error) {
@@ -166,7 +165,7 @@ const Dashboard = () => {
   
   const handleRefresh = () => {
     refresh();
-    setForceRender(prev => prev + 1); // Increment to force re-render
+    setForceRender(prev => prev + 1);
     toast({
       title: "Refreshed",
       description: "The system data has been refreshed."
@@ -264,7 +263,15 @@ const Dashboard = () => {
             <StudentList maxPreferences={maxPreferences} />
           </TabsContent>
           <TabsContent value="schedule" key={`schedule-${forceRender}`}>
-            <InterviewSchedule />
+            {activeTab === "schedule" && (
+              <div>
+                <InterviewSortingOptions 
+                  sortMode={interviewSortMode} 
+                  onSortChange={setInterviewSortMode} 
+                />
+                <InterviewSchedule sortMode={interviewSortMode} />
+              </div>
+            )}
           </TabsContent>
           <TabsContent value="offers" key={`offers-${forceRender}`}>
             <OffersManagement />

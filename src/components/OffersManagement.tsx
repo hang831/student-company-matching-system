@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useInternshipSystem } from "@/hooks/useInternshipSystem";
@@ -19,8 +18,8 @@ const statusColorMap: Record<OfferStatus, string> = {
   rejected: "bg-red-100",
   withdrawn: "bg-gray-100",
   "reserved-1": "bg-purple-100",
-  "reserved-2": "bg-indigo-100",
-  "reserved-3": "bg-pink-100"
+  "reserved-2": "bg-purple-100",
+  "reserved-3": "bg-purple-100"
 };
 
 const OffersManagement = () => {
@@ -210,15 +209,7 @@ const OffersManagement = () => {
         </div>
         <div className="flex items-center">
           <div className="w-4 h-4 bg-purple-100 mr-2"></div>
-          <span className="text-sm">Reserved-1</span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-4 h-4 bg-indigo-100 mr-2"></div>
-          <span className="text-sm">Reserved-2</span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-4 h-4 bg-pink-100 mr-2"></div>
-          <span className="text-sm">Reserved-3</span>
+          <span className="text-sm">Reserved-1/2/3</span>
         </div>
       </div>
     </div>
