@@ -9,7 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { InterviewSlot } from "@/types";
 
 // Define the offer status types
-type OfferStatus = "pending" | "offered" | "accepted" | "rejected" | "withdrawn";
+type OfferStatus = "pending" | "offered" | "accepted" | "rejected" | "withdrawn" | "reserved-1" | "reserved-2" | "reserved-3";
 
 // Define the mapping between offer status and cell colors
 const statusColorMap: Record<OfferStatus, string> = {
@@ -17,7 +17,10 @@ const statusColorMap: Record<OfferStatus, string> = {
   offered: "bg-blue-100",
   accepted: "bg-green-100",
   rejected: "bg-red-100",
-  withdrawn: "bg-gray-100"
+  withdrawn: "bg-gray-100",
+  "reserved-1": "bg-purple-100",
+  "reserved-2": "bg-indigo-100",
+  "reserved-3": "bg-pink-100"
 };
 
 const OffersManagement = () => {
@@ -165,6 +168,9 @@ const OffersManagement = () => {
                                   <SelectItem value="accepted">Accepted</SelectItem>
                                   <SelectItem value="rejected">Rejected</SelectItem>
                                   <SelectItem value="withdrawn">Withdrawn</SelectItem>
+                                  <SelectItem value="reserved-1">Reserved-1</SelectItem>
+                                  <SelectItem value="reserved-2">Reserved-2</SelectItem>
+                                  <SelectItem value="reserved-3">Reserved-3</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -201,6 +207,18 @@ const OffersManagement = () => {
         <div className="flex items-center">
           <div className="w-4 h-4 bg-gray-100 mr-2"></div>
           <span className="text-sm">Withdrawn</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-4 h-4 bg-purple-100 mr-2"></div>
+          <span className="text-sm">Reserved-1</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-4 h-4 bg-indigo-100 mr-2"></div>
+          <span className="text-sm">Reserved-2</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-4 h-4 bg-pink-100 mr-2"></div>
+          <span className="text-sm">Reserved-3</span>
         </div>
       </div>
     </div>
