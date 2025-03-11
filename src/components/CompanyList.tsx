@@ -162,6 +162,8 @@ const CompanyList = () => {
                 <p className="text-sm"><span className="font-medium">Intake:</span> {company.intakeNumber} students</p>
                 <p className="text-sm"><span className="font-medium">Place:</span> {company.interviewPlace || "N/A"}</p>
                 <p className="text-sm"><span className="font-medium">Contact:</span> {company.contactPerson || "N/A"}</p>
+                <p className="text-sm"><span className="font-medium">Allowance:</span> {company.allowance || "N/A"}</p>
+                <p className="text-sm"><span className="font-medium">Remarks:</span> {company.remarks || "N/A"}</p>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex space-x-2">
@@ -204,7 +206,7 @@ const CompanyList = () => {
                       setSelectedCompany(company);
                     }}
                   >
-                    <Edit className="h-4 w-4 mr-1" /> View Details
+                    <Edit className="h-4 w-4 mr-1" /> Edit Details
                   </Button>
                 </div>
               </div>

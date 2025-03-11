@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, Trash2 } from "lucide-react";
+import { Calendar, Clock, Trash2, Download } from "lucide-react";
 import { InterviewSlot, Student, Company } from "@/types";
 
 const InterviewSchedule = () => {
-  const { companies, students, slots, bookInterviewSlot, getStudentById, removeTimeslot } = useInternshipSystem();
+  const { companies, students, slots, bookInterviewSlot, getStudentById, removeTimeslot, getCompanyById } = useInternshipSystem();
   const [selectedSlot, setSelectedSlot] = useState<InterviewSlot | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [localSlots, setLocalSlots] = useState(slots);
@@ -37,6 +37,30 @@ const InterviewSchedule = () => {
       setSelectedSlot(null);
       setSelectedStudentId("");
     }
+  };
+
+  // Function to download interview details
+  const downloadInterviewDetails = (slot: InterviewSlot) => {
+    const student = slot.studentId ? getStudentById(slot.studentId) : null;
+    const company = companies.find(c => c.id === slot.companyId);
+    
+    if (!student || !company) return;
+    
+    const content = `Dear ${student.name}
+Interview Schedule:
+${company.name}
+${format(new Date(slot.date), "EEEE, MMMM d, yyyy")}, ${slot.startTime} - ${slot.endTime}
+${company.interviewPlace || "TBA"}
+${company.remarks || ""}`;
+
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `interview_${student.name}_${company.name}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // Get students who have a preference for a specific company
@@ -250,6 +274,17 @@ const InterviewSchedule = () => {
                           >
                             {slot.booked ? "Edit" : "Book"}
                           </Button>
+                          
+                          {slot.booked && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => downloadInterviewDetails(slot)}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          )}
+                          
                           <Button 
                             variant="outline" 
                             size="sm"

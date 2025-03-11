@@ -62,6 +62,18 @@ export const downloadTemplate = (template: string, filename: string) => {
   document.body.removeChild(link);
 };
 
+// Function to download text content as a file
+export const downloadTextFile = (content: string, filename: string) => {
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
 // Function to parse CSV data for import
 export function parseCSV<T>(csv: string): T[] {
   const lines = csv.split('\n');

@@ -47,7 +47,9 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
   };
 
   const handleSave = () => {
-    updateCompany(editedCompany);
+    // Create a deep copy to ensure we're not sharing the same object reference
+    const companyToUpdate = JSON.parse(JSON.stringify(editedCompany));
+    updateCompany(companyToUpdate);
     onClose();
   };
 
