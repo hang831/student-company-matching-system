@@ -10,27 +10,44 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar, Clock, Trash2, Download } from "lucide-react";
 import { InterviewSlot, Student, Company } from "@/types";
 
-const InterviewSchedule = () => {
-  const { companies, students, slots, bookInterviewSlot, getStudentById, removeTimeslot, getCompanyById } = useInternshipSystem();
+interface InterviewScheduleProps {
+  sortMode: string;
+}
+
+const InterviewSchedule = ({ sortMode }: InterviewScheduleProps) => {
+  const { companies, students, slots, bookInterviewSlot, getStudentById, removeTimeslot, getCompanyById, sortSlotsByDate, sortSlotsByCompanyAndDate } = useInternshipSystem();
   const [selectedSlot, setSelectedSlot] = useState<InterviewSlot | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [localSlots, setLocalSlots] = useState(slots);
   
   // Update local slots whenever the global slots change
   useEffect(() => {
-    setLocalSlots(slots);
-  }, [slots]);
+    const sortedSlots = sortMode === "company" 
+      ? sortSlotsByCompanyAndDate(slots)
+      : sortSlotsByDate(slots);
+    setLocalSlots(sortedSlots);
+  }, [slots, sortMode, sortSlotsByDate, sortSlotsByCompanyAndDate]);
 
-  // Group slots by date
-  const slotsByDate = localSlots.reduce((acc, slot) => {
-    const dateStr = format(new Date(slot.date), "yyyy-MM-dd");
-    if (!acc[dateStr]) {
-      acc[dateStr] = [];
+  // Group slots by date or by company based on sortMode
+  const slotsByGroup = localSlots.reduce((acc, slot) => {
+    let groupKey;
+    
+    if (sortMode === "company") {
+      const company = companies.find(c => c.id === slot.companyId);
+      groupKey = company ? company.name : "Unknown Company";
+    } else {
+      // Default is date
+      groupKey = format(new Date(slot.date), "yyyy-MM-dd");
     }
-    acc[dateStr].push(slot);
+    
+    if (!acc[groupKey]) {
+      acc[groupKey] = [];
+    }
+    acc[groupKey].push(slot);
     return acc;
   }, {} as Record<string, InterviewSlot[]>);
 
+  // Handle booking a slot
   const handleBookSlot = () => {
     if (selectedSlot && selectedStudentId) {
       bookInterviewSlot(selectedSlot.id, selectedStudentId);
@@ -222,86 +239,158 @@ ${company.remarks || ""}`;
       {scheduleMatrix()}
       {preferenceMatrix()}
 
-      {Object.entries(slotsByDate).map(([dateStr, daySlots]) => (
-        <Card key={dateStr} className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Calendar className="h-5 w-5 mr-2" />
-              {format(new Date(dateStr), "EEEE, MMMM d, yyyy")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Time</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Student</TableHead>
-                  <TableHead>Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {daySlots.map((slot) => {
-                  const company = companies.find(c => c.id === slot.companyId);
-                  const student = slot.studentId ? getStudentById(slot.studentId) : null;
-                  
-                  return (
-                    <TableRow key={slot.id} className={!slot.isAvailable ? "opacity-60" : ""}>
-                      <TableCell className="flex items-center">
-                        <Clock className="h-4 w-4 mr-2" />
-                        {slot.startTime} - {slot.endTime}
-                      </TableCell>
-                      <TableCell>{company?.name || "Unknown"}</TableCell>
-                      <TableCell>
-                        {slot.booked ? (
-                          <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                            Booked
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                            {slot.isAvailable ? "Available" : "Unavailable"}
-                          </span>
+      {Object.entries(slotsByGroup).map(([groupKey, groupSlots]) => {
+        // Determine title based on sort mode
+        const title = sortMode === "company" 
+          ? groupKey // Just show company name
+          : format(new Date(groupKey), "EEEE, MMMM d, yyyy"); // Format date
+        
+        return (
+          <Card key={groupKey} className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                {sortMode === "company" 
+                  ? <span>{title}</span>
+                  : (
+                    <>
+                      <Calendar className="h-5 w-5 mr-2" />
+                      {title}
+                    </>
+                  )
+                }
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {sortMode === "company" && <TableHead>Date</TableHead>}
+                    <TableHead>Time</TableHead>
+                    <TableHead>{sortMode === "company" ? "Status" : "Company"}</TableHead>
+                    <TableHead>{sortMode === "company" ? "Student" : "Status"}</TableHead>
+                    <TableHead>{sortMode === "company" ? "Action" : "Student"}</TableHead>
+                    {sortMode !== "company" && <TableHead>Action</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {groupSlots.map((slot) => {
+                    const company = companies.find(c => c.id === slot.companyId);
+                    const student = slot.studentId ? getStudentById(slot.studentId) : null;
+                    
+                    return (
+                      <TableRow key={slot.id} className={!slot.isAvailable ? "opacity-60" : ""}>
+                        {sortMode === "company" && (
+                          <TableCell>
+                            {format(new Date(slot.date), "MMM d, yyyy")}
+                          </TableCell>
                         )}
-                      </TableCell>
-                      <TableCell>{student?.name || "-"}</TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setSelectedSlot(slot)}
-                          >
-                            {slot.booked ? "Edit" : "Book"}
-                          </Button>
-                          
-                          {slot.booked && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => downloadInterviewDetails(slot)}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
+                        <TableCell className="flex items-center">
+                          <Clock className="h-4 w-4 mr-2" />
+                          {slot.startTime} - {slot.endTime}
+                        </TableCell>
+                        <TableCell>
+                          {sortMode === "company" ? (
+                            slot.booked ? (
+                              <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                                Booked
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                                {slot.isAvailable ? "Available" : "Unavailable"}
+                              </span>
+                            )
+                          ) : (
+                            company?.name || "Unknown"
                           )}
-                          
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => removeTimeslot(slot.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      ))}
+                        </TableCell>
+                        <TableCell>
+                          {sortMode === "company" ? (
+                            student?.name || "-"
+                          ) : (
+                            slot.booked ? (
+                              <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                                Booked
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                                {slot.isAvailable ? "Available" : "Unavailable"}
+                              </span>
+                            )
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {sortMode === "company" ? (
+                            <div className="flex space-x-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setSelectedSlot(slot)}
+                              >
+                                {slot.booked ? "Edit" : "Book"}
+                              </Button>
+                              
+                              {slot.booked && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => downloadInterviewDetails(slot)}
+                                >
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                              )}
+                              
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => removeTimeslot(slot.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            student?.name || "-"
+                          )}
+                        </TableCell>
+                        {sortMode !== "company" && (
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setSelectedSlot(slot)}
+                              >
+                                {slot.booked ? "Edit" : "Book"}
+                              </Button>
+                              
+                              {slot.booked && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => downloadInterviewDetails(slot)}
+                                >
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                              )}
+                              
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => removeTimeslot(slot.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        );
+      })}
 
       {selectedSlot && (
         <Dialog open={!!selectedSlot} onOpenChange={(open) => !open && setSelectedSlot(null)}>

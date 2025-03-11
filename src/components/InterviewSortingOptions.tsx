@@ -2,7 +2,7 @@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
-interface InterviewSortingOptionsProps {
+export interface InterviewSortingOptionsProps {
   sortMode: string;
   onSortChange: (mode: string) => void;
 }
