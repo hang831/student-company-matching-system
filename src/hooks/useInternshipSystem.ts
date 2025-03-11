@@ -472,83 +472,141 @@ export const useInternshipSystem = () => {
 
   // Import companies from CSV data
   const importCompanies = (companyDataList: CompanyImportData[]) => {
-    const newCompanies = companyDataList.map(companyData => ({
-      ...companyData,
-      id: `c${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      availableSlots: []
-    }));
-    
-    setCompanies([...companies, ...newCompanies]);
-    
-    // Force refresh to update UI
-    refresh();
+    try {
+      if (!companyDataList || companyDataList.length === 0) {
+        toast({
+          title: "Import Error",
+          description: "No valid company data found in the file.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const newCompanies = companyDataList.map(companyData => ({
+        ...companyData,
+        id: `c${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        availableSlots: []
+      }));
+      
+      setCompanies(prevCompanies => [...prevCompanies, ...newCompanies]);
+      
+      toast({
+        title: "Companies Imported",
+        description: `${newCompanies.length} companies have been imported successfully.`,
+      });
+    } catch (error) {
+      console.error("Import companies error:", error);
+      toast({
+        title: "Import Error",
+        description: "Failed to import companies. Please check the file format.",
+        variant: "destructive",
+      });
+    }
   };
   
   // Import students from CSV data
   const importStudents = (studentDataList: StudentImportData[]) => {
-    const newStudents = studentDataList.map(studentData => ({
-      ...studentData,
-      id: `s${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      preferences: [],
-      bookedInterviews: []
-    }));
-    
-    setStudents([...students, ...newStudents]);
-    
-    // Force refresh to update UI
-    refresh();
+    try {
+      if (!studentDataList || studentDataList.length === 0) {
+        toast({
+          title: "Import Error",
+          description: "No valid student data found in the file.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const newStudents = studentDataList.map(studentData => ({
+        ...studentData,
+        id: `s${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        preferences: [],
+        bookedInterviews: []
+      }));
+      
+      setStudents(prevStudents => [...prevStudents, ...newStudents]);
+      
+      toast({
+        title: "Students Imported",
+        description: `${newStudents.length} students have been imported successfully.`,
+      });
+    } catch (error) {
+      console.error("Import students error:", error);
+      toast({
+        title: "Import Error",
+        description: "Failed to import students. Please check the file format.",
+        variant: "destructive",
+      });
+    }
   };
   
   // Import student preferences from CSV data
   const importPreferences = (preferencesDataList: PreferenceImportData[]) => {
-    let updatedStudents = [...students];
+    try {
+      if (!preferencesDataList || preferencesDataList.length === 0) {
+        toast({
+          title: "Import Error",
+          description: "No valid preference data found in the file.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      let updatedStudents = [...students];
+      let processedCount = 0;
 
-    // Process each preference in the import data
-    preferencesDataList.forEach(prefData => {
-      // Find student by student ID
-      const studentIndex = updatedStudents.findIndex(s => s.studentId === prefData.studentId);
-      if (studentIndex === -1) {
-        console.warn(`Student with ID ${prefData.studentId} not found`);
-        return;
-      }
+      // Process each preference in the import data
+      preferencesDataList.forEach(prefData => {
+        // Find student by student ID
+        const studentIndex = updatedStudents.findIndex(s => s.studentId === prefData.studentId);
+        if (studentIndex === -1) {
+          console.warn(`Student with ID ${prefData.studentId} not found`);
+          return;
+        }
+        
+        // Find company by name
+        const company = companies.find(c => c.name === prefData.companyName);
+        if (!company) {
+          console.warn(`Company with name ${prefData.companyName} not found`);
+          return;
+        }
+        
+        // Create the preference
+        const preference: StudentPreference = {
+          studentId: updatedStudents[studentIndex].id,
+          companyId: company.id,
+          rank: prefData.rank
+        };
+        
+        // Add the preference directly to the student
+        const student = updatedStudents[studentIndex];
+        const existingPrefIndex = student.preferences.findIndex(
+          (pref) => pref.companyId === preference.companyId
+        );
+        
+        if (existingPrefIndex >= 0) {
+          student.preferences[existingPrefIndex] = preference;
+        } else {
+          student.preferences.push(preference);
+        }
+        
+        processedCount++;
+      });
       
-      // Find company by name
-      const company = companies.find(c => c.name === prefData.companyName);
-      if (!company) {
-        console.warn(`Company with name ${prefData.companyName} not found`);
-        return;
-      }
+      // Update the state with all changes at once
+      setStudents(updatedStudents);
       
-      // Create the preference
-      const preference: StudentPreference = {
-        studentId: updatedStudents[studentIndex].id,
-        companyId: company.id,
-        rank: prefData.rank
-      };
-      
-      // Add the preference directly to the student
-      const student = updatedStudents[studentIndex];
-      const existingPrefIndex = student.preferences.findIndex(
-        (pref) => pref.companyId === preference.companyId
-      );
-      
-      if (existingPrefIndex >= 0) {
-        student.preferences[existingPrefIndex] = preference;
-      } else {
-        student.preferences.push(preference);
-      }
-    });
-    
-    // Update the state with all changes at once
-    setStudents(updatedStudents);
-    
-    toast({
-      title: "Preferences Imported",
-      description: `Student preferences have been imported successfully.`,
-    });
-    
-    // Force refresh to update UI
-    refresh();
+      toast({
+        title: "Preferences Imported",
+        description: `${processedCount} student preferences have been imported successfully.`,
+      });
+    } catch (error) {
+      console.error("Import preferences error:", error);
+      toast({
+        title: "Import Error",
+        description: "Failed to import preferences. Please check the file format.",
+        variant: "destructive",
+      });
+    }
   };
 
   return {

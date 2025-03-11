@@ -9,11 +9,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { User, Star, IdCard, Phone, BookOpen, Plus, Edit, Trash, Upload, FileSpreadsheet } from "lucide-react";
 import { Student, PreferenceImportData } from "@/types";
 import { downloadTemplate, generatePreferencesTemplate, parseCSV, mapCSVToPreferencesData } from "@/utils/excelUtils";
 
-const StudentList = () => {
+interface StudentListProps {
+  maxPreferences?: number;
+}
+
+const StudentList = ({ maxPreferences = 5 }: StudentListProps) => {
   const { students, companies, addStudentPreference, updateStudent, addStudent, deleteStudent, importPreferences } = useInternshipSystem();
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [editMode, setEditMode] = useState(false);
@@ -21,7 +26,6 @@ const StudentList = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
-  const [maxPreferences, setMaxPreferences] = useState(5);
   const [newStudent, setNewStudent] = useState({
     name: "",
     email: "",
@@ -32,8 +36,8 @@ const StudentList = () => {
   
   const handlePreferenceChange = (companyId: string, value: string) => {
     if (selectedStudent) {
-      // If value is empty string, reset preference (rank 0 will be handled in useInternshipSystem)
-      const rank = value === "" ? 0 : parseInt(value, 10);
+      // If value is "none", reset preference (rank 0 will be handled in useInternshipSystem)
+      const rank = value === "none" ? 0 : parseInt(value, 10);
       
       addStudentPreference({
         studentId: selectedStudent.id,
@@ -342,86 +346,69 @@ const StudentList = () => {
 
       {selectedStudent && (
         <Dialog open={!!selectedStudent && !editMode} onOpenChange={(open) => !open && setSelectedStudent(null)}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>Student Preferences</DialogTitle>
               <DialogDescription>Set your company preferences</DialogDescription>
             </DialogHeader>
-            <div className="py-4">
-              <h3 className="text-lg font-medium mb-2">{selectedStudent.name}</h3>
-              <div className="space-y-1 mb-4">
-                <p className="text-sm text-muted-foreground flex items-center">
-                  <IdCard className="h-4 w-4 mr-2" />
-                  ID: {selectedStudent.studentId}
-                </p>
-                <p className="text-sm text-muted-foreground flex items-center">
-                  <Phone className="h-4 w-4 mr-2" />
-                  Tel: {selectedStudent.tel}
-                </p>
-                <p className="text-sm text-muted-foreground flex items-center">
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  GPA: {selectedStudent.gpa}
-                </p>
-              </div>
-              
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <Label htmlFor="maxPreferences">Max Preferences:</Label>
-                  <Select 
-                    value={maxPreferences.toString()} 
-                    onValueChange={(value) => setMaxPreferences(parseInt(value))}
-                  >
-                    <SelectTrigger className="w-20">
-                      <SelectValue placeholder="Max" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                        <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+            <ScrollArea className="max-h-[70vh]">
+              <div className="py-4">
+                <h3 className="text-lg font-medium mb-2">{selectedStudent.name}</h3>
+                <div className="space-y-1 mb-4">
+                  <p className="text-sm text-muted-foreground flex items-center">
+                    <IdCard className="h-4 w-4 mr-2" />
+                    ID: {selectedStudent.studentId}
+                  </p>
+                  <p className="text-sm text-muted-foreground flex items-center">
+                    <Phone className="h-4 w-4 mr-2" />
+                    Tel: {selectedStudent.tel}
+                  </p>
+                  <p className="text-sm text-muted-foreground flex items-center">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    GPA: {selectedStudent.gpa}
+                  </p>
                 </div>
-              </div>
-              
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Preference Rank</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {companies.map((company) => (
-                    <TableRow key={company.id}>
-                      <TableCell>{company.name}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Label htmlFor={`rank-${company.id}`} className="w-20">
-                            Rank:
-                          </Label>
-                          <Select 
-                            value={getPreferenceRank(selectedStudent.id, company.id)?.toString() || ""}
-                            onValueChange={(value) => handlePreferenceChange(company.id, value)}
-                          >
-                            <SelectTrigger id={`rank-${company.id}`} className="w-24">
-                              <SelectValue placeholder="Rank" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="">None</SelectItem>
-                              {[...Array(maxPreferences)].map((_, i) => (
-                                <SelectItem key={i+1} value={(i+1).toString()}>
-                                  {i+1} {i === 0 ? "(Top)" : ""}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </TableCell>
+                
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Company</TableHead>
+                      <TableHead>Preference Rank</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {companies.map((company) => (
+                      <TableRow key={company.id}>
+                        <TableCell>{company.name}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Label htmlFor={`rank-${company.id}`} className="w-20">
+                              Rank:
+                            </Label>
+                            <Select 
+                              value={getPreferenceRank(selectedStudent.id, company.id)?.toString() || "none"}
+                              onValueChange={(value) => handlePreferenceChange(company.id, value)}
+                            >
+                              <SelectTrigger id={`rank-${company.id}`} className="w-24">
+                                <SelectValue placeholder="Rank" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">None</SelectItem>
+                                {[...Array(maxPreferences)].map((_, i) => (
+                                  <SelectItem key={i+1} value={(i+1).toString()}>
+                                    {i+1} {i === 0 ? "(Top)" : ""}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </ScrollArea>
             <Button onClick={() => setSelectedStudent(null)}>Close</Button>
           </DialogContent>
         </Dialog>

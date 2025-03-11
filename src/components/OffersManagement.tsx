@@ -152,8 +152,8 @@ const OffersManagement = () => {
                               </div>
                               <Select 
                                 value={offerStatus} 
-                                onValueChange={(value: OfferStatus) => 
-                                  handleStatusChange(student.id, company.id, value)
+                                onValueChange={(value: string) => 
+                                  handleStatusChange(student.id, company.id, value as OfferStatus)
                                 }
                               >
                                 <SelectTrigger className="h-7 text-xs">

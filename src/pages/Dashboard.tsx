@@ -1,5 +1,5 @@
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CompanyList from "@/components/CompanyList";
 import StudentList from "@/components/StudentList";
@@ -9,7 +9,8 @@ import { useInternshipSystem } from "@/hooks/useInternshipSystem";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Download, Upload, FileSpreadsheet, RefreshCcw } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Download, Upload, FileSpreadsheet, RefreshCcw, Settings } from "lucide-react";
 import { 
   downloadTemplate, 
   generateCompanyTemplate, 
@@ -21,14 +22,25 @@ import {
   mapCSVToPreferencesData 
 } from "@/utils/excelUtils";
 import { toast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Dashboard = () => {
   const { importCompanies, importStudents, importPreferences, refresh } = useInternshipSystem();
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importType, setImportType] = useState<"companies" | "students" | "preferences">("companies");
   const [activeTab, setActiveTab] = useState("companies");
   const [forceRender, setForceRender] = useState(0); // Add a force render counter
+  const [maxPreferences, setMaxPreferences] = useState(() => {
+    const saved = localStorage.getItem('maxPreferences');
+    return saved ? parseInt(saved) : 5;
+  });
+  
+  // Save max preferences to localStorage
+  useEffect(() => {
+    localStorage.setItem('maxPreferences', maxPreferences.toString());
+  }, [maxPreferences]);
   
   const handleDownloadTemplate = (type: "companies" | "students" | "preferences") => {
     if (type === "companies") {
@@ -132,90 +144,111 @@ const Dashboard = () => {
           </p>
         </div>
 
-        <div className="flex justify-end space-x-2">
-          <Button 
-            variant="outline" 
-            onClick={handleRefresh} 
-            className="bg-gray-50"
-          >
-            <RefreshCcw className="mr-2 h-4 w-4" /> Refresh Data
-          </Button>
-          
-          <div className="dropdown-menu">
-            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={() => handleImportClick("companies")}>
-                  <Upload className="mr-2 h-4 w-4" /> Import Companies
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>
-                    Import {
-                      importType === "companies" 
-                        ? "Companies" 
-                        : importType === "students" 
-                          ? "Students" 
-                          : "Student Preferences"
-                    }
-                  </DialogTitle>
-                  <DialogDescription>
-                    Upload a CSV file to import {
-                      importType === "companies" 
-                        ? "companies" 
-                        : importType === "students" 
-                          ? "students" 
-                          : "student preferences"
-                    } in bulk.
-                    Make sure to use the correct template format.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="py-4 space-y-4">
-                  <div>
-                    <Label htmlFor="file">Select CSV File</Label>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      id="file"
-                      accept=".csv"
-                      onChange={handleFileChange}
-                      className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100 mt-1"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-sm mb-2">Need a template?</p>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleDownloadTemplate(importType)}
-                    >
-                      <Download className="mr-2 h-4 w-4" /> Download Template
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center space-x-2 bg-gray-50 p-2 rounded-md">
+              <Label htmlFor="maxPreferences" className="mr-2">Max Preferences:</Label>
+              <Select 
+                value={maxPreferences.toString()} 
+                onValueChange={(value) => setMaxPreferences(parseInt(value))}
+              >
+                <SelectTrigger className="w-20">
+                  <SelectValue placeholder="Max" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                    <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              onClick={handleRefresh} 
+              className="bg-gray-50"
+            >
+              <RefreshCcw className="mr-2 h-4 w-4" /> Refresh Data
+            </Button>
           </div>
-          
-          <Button onClick={() => handleImportClick("students")}>
-            <Upload className="mr-2 h-4 w-4" /> Import Students
-          </Button>
-          
-          <Button onClick={() => handleImportClick("preferences")}>
-            <Upload className="mr-2 h-4 w-4" /> Import Preferences
-          </Button>
-          
-          <Button variant="outline" onClick={() => handleDownloadTemplate("companies")}>
-            <FileSpreadsheet className="mr-2 h-4 w-4" /> Company Template
-          </Button>
-          
-          <Button variant="outline" onClick={() => handleDownloadTemplate("students")}>
-            <FileSpreadsheet className="mr-2 h-4 w-4" /> Student Template
-          </Button>
-          
-          <Button variant="outline" onClick={() => handleDownloadTemplate("preferences")}>
-            <FileSpreadsheet className="mr-2 h-4 w-4" /> Preferences Template
-          </Button>
+
+          <div className="flex space-x-2">          
+            <div className="dropdown-menu">
+              <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => handleImportClick("companies")}>
+                    <Upload className="mr-2 h-4 w-4" /> Import Companies
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>
+                      Import {
+                        importType === "companies" 
+                          ? "Companies" 
+                          : importType === "students" 
+                            ? "Students" 
+                            : "Student Preferences"
+                      }
+                    </DialogTitle>
+                    <DialogDescription>
+                      Upload a CSV file to import {
+                        importType === "companies" 
+                          ? "companies" 
+                          : importType === "students" 
+                            ? "students" 
+                            : "student preferences"
+                      } in bulk.
+                      Make sure to use the correct template format.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="py-4 space-y-4">
+                    <div>
+                      <Label htmlFor="file">Select CSV File</Label>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        id="file"
+                        accept=".csv"
+                        onChange={handleFileChange}
+                        className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100 mt-1"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-sm mb-2">Need a template?</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDownloadTemplate(importType)}
+                      >
+                        <Download className="mr-2 h-4 w-4" /> Download Template
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+            
+            <Button onClick={() => handleImportClick("students")}>
+              <Upload className="mr-2 h-4 w-4" /> Import Students
+            </Button>
+            
+            <Button onClick={() => handleImportClick("preferences")}>
+              <Upload className="mr-2 h-4 w-4" /> Import Preferences
+            </Button>
+            
+            <Button variant="outline" onClick={() => handleDownloadTemplate("companies")}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" /> Company Template
+            </Button>
+            
+            <Button variant="outline" onClick={() => handleDownloadTemplate("students")}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" /> Student Template
+            </Button>
+            
+            <Button variant="outline" onClick={() => handleDownloadTemplate("preferences")}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" /> Preferences Template
+            </Button>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -230,7 +263,7 @@ const Dashboard = () => {
             <CompanyList />
           </TabsContent>
           <TabsContent value="students" key={`students-${forceRender}`}>
-            <StudentList />
+            <StudentList maxPreferences={maxPreferences} />
           </TabsContent>
           <TabsContent value="schedule" key={`schedule-${forceRender}`}>
             <InterviewSchedule />
