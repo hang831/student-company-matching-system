@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CompanyList from "@/components/CompanyList";
@@ -14,6 +15,7 @@ import { downloadTemplate, generateCompanyTemplate, generateStudentTemplate, gen
 import { toast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import InterviewSortingOptions from "@/components/InterviewSortingOptions";
+import LocalStorageUtils from "@/components/LocalStorageUtils";
 
 const Dashboard = () => {
   const {
@@ -172,6 +174,11 @@ const Dashboard = () => {
     });
   };
   
+  const handleDataImportSuccess = () => {
+    refresh();
+    setForceRender(prev => prev + 1);
+  };
+  
   return <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col space-y-6">
         <div className="flex flex-col space-y-2">
@@ -198,6 +205,8 @@ const Dashboard = () => {
             <Button variant="outline" onClick={handleRefresh} className="bg-gray-50">
               <RefreshCcw className="mr-2 h-4 w-4" /> Refresh Data
             </Button>
+            
+            <LocalStorageUtils onImportSuccess={handleDataImportSuccess} />
           </div>
 
           <div className="flex space-x-2">          
@@ -245,7 +254,6 @@ const Dashboard = () => {
             <Button variant="outline" onClick={() => handleDownloadTemplate("students")}>
               <FileSpreadsheet className="mr-2 h-4 w-4" /> Student Template
             </Button>
-            
           </div>
         </div>
 

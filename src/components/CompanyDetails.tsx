@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useInternshipSystem } from "@/hooks/useInternshipSystem";
 import { format } from "date-fns";
@@ -26,7 +25,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
   });
   const [activeTab, setActiveTab] = useState("details");
   
-  // Refresh company data whenever it changes or tab changes
+  // Refresh only the slots data whenever company changes
   useEffect(() => {
     const refreshData = () => {
       const refreshedCompany = getCompanyById(company.id);
@@ -57,14 +56,8 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
   };
 
   const handleSave = () => {
-    // Ensure we're working with a clean deep copy
+    // Make a copy of the edited company with all form changes
     const companyToUpdate = JSON.parse(JSON.stringify(editedCompany));
-    
-    // Make sure we have the latest availableSlots data from the system
-    const currentCompany = getCompanyById(company.id);
-    if (currentCompany) {
-      companyToUpdate.availableSlots = JSON.parse(JSON.stringify(currentCompany.availableSlots));
-    }
     
     // Call the update function with our updated company object
     updateCompany(companyToUpdate);
