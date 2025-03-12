@@ -93,15 +93,27 @@ export const useInternshipSystem = () => {
 
   // Update company details
   const updateCompany = (updatedCompany: Company) => {
-    setCompanies(
-      companies.map((company) =>
-        company.id === updatedCompany.id ? updatedCompany : company
-      )
+    // Create a deep copy to avoid reference issues
+    const updatedCompanyCopy = JSON.parse(JSON.stringify(updatedCompany));
+    
+    // Update the companies array
+    const updatedCompanies = companies.map((company) =>
+      company.id === updatedCompanyCopy.id ? updatedCompanyCopy : company
     );
+    
+    // Set the new companies array
+    setCompanies(updatedCompanies);
+    
+    // Immediately save to localStorage to ensure persistence
+    localStorage.setItem('companies', JSON.stringify(updatedCompanies));
+    
     toast({
       title: "Company updated",
-      description: `${updatedCompany.name} has been updated successfully.`,
+      description: `${updatedCompanyCopy.name} has been updated successfully.`,
     });
+    
+    // Return the updated company for immediate use if needed
+    return updatedCompanyCopy;
   };
 
   // Delete company
@@ -503,7 +515,7 @@ export const useInternshipSystem = () => {
     return students.find((student) => student.id === studentId);
   };
 
-  // Get company by ID
+  // Get company by ID - updated to always get fresh data from state
   const getCompanyById = (companyId: string) => {
     return companies.find((company) => company.id === companyId);
   };

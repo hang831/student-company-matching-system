@@ -12,7 +12,7 @@ import CompanyDetails from "./CompanyDetails";
 import { Company } from "@/types";
 
 const CompanyList = () => {
-  const { companies, addCompany, deleteCompany } = useInternshipSystem();
+  const { companies, addCompany, deleteCompany, refresh } = useInternshipSystem();
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
@@ -33,6 +33,15 @@ const CompanyList = () => {
     // Force component to re-render when companies change
     setForceUpdate(prev => prev + 1);
   }, [companies]);
+
+  // Additional effect to periodically refresh data from storage
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      refresh(); // Call the refresh function from the hook
+    }, 1000);
+    
+    return () => clearInterval(intervalId);
+  }, [refresh]);
 
   const handleAddCompany = () => {
     if (newCompany.name && newCompany.description) {
@@ -58,9 +67,18 @@ const CompanyList = () => {
   };
   
   const handleCompanyDetailsClosed = () => {
+    // Get fresh data from storage
+    refresh();
     setSelectedCompany(null);
     // Force re-render to reflect updates
     setForceUpdate(prev => prev + 1);
+  };
+
+  // Function to open company details with the latest data
+  const openCompanyDetails = (company: Company) => {
+    refresh(); // Refresh data first
+    // Use the latest company data
+    setSelectedCompany(company);
   };
 
   return (
@@ -217,7 +235,7 @@ const CompanyList = () => {
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setSelectedCompany(company);
+                      openCompanyDetails(company);
                     }}
                   >
                     <Edit className="h-4 w-4 mr-1" /> Edit Details

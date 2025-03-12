@@ -57,7 +57,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
   };
 
   const handleSave = () => {
-    // Make a copy of the edited company with all form changes
+    // Make a full deep copy of the edited company with all form changes
     const companyToUpdate = JSON.parse(JSON.stringify(editedCompany));
     
     // Get the latest availableSlots data directly from the source
@@ -69,11 +69,11 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
     // Call the update function with our updated company object
     updateCompany(companyToUpdate);
     
-    // Update the local state to reflect changes immediately
-    setEditedCompany(companyToUpdate);
-    
     // Close the dialog after saving
-    onClose();
+    // Use a slight delay to ensure the update has propagated to the data store
+    setTimeout(() => {
+      onClose();
+    }, 100);
   };
 
   const handleToggleAvailability = (slotId: string) => {
