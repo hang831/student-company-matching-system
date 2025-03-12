@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useInternshipSystem } from "@/hooks/useInternshipSystem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,14 @@ const CompanyList = () => {
     allowance: "",
     remarks: ""
   });
+  
+  // Force re-render when companies change
+  const [, setForceUpdate] = useState<number>(0);
+  
+  useEffect(() => {
+    // Force component to re-render when companies change
+    setForceUpdate(prev => prev + 1);
+  }, [companies]);
 
   const handleAddCompany = () => {
     if (newCompany.name && newCompany.description) {
@@ -47,6 +55,12 @@ const CompanyList = () => {
       deleteCompany(companyToDelete.id);
       setCompanyToDelete(null);
     }
+  };
+  
+  const handleCompanyDetailsClosed = () => {
+    setSelectedCompany(null);
+    // Force re-render to reflect updates
+    setForceUpdate(prev => prev + 1);
   };
 
   return (
@@ -218,7 +232,7 @@ const CompanyList = () => {
       {selectedCompany && (
         <CompanyDetails
           company={selectedCompany}
-          onClose={() => setSelectedCompany(null)}
+          onClose={handleCompanyDetailsClosed}
         />
       )}
     </div>

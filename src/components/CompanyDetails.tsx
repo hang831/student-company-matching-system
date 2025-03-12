@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useInternshipSystem } from "@/hooks/useInternshipSystem";
 import { format } from "date-fns";
@@ -59,8 +60,17 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
     // Make a copy of the edited company with all form changes
     const companyToUpdate = JSON.parse(JSON.stringify(editedCompany));
     
+    // Get the latest availableSlots data directly from the source
+    const latestCompany = getCompanyById(company.id);
+    if (latestCompany) {
+      companyToUpdate.availableSlots = JSON.parse(JSON.stringify(latestCompany.availableSlots));
+    }
+    
     // Call the update function with our updated company object
     updateCompany(companyToUpdate);
+    
+    // Update the local state to reflect changes immediately
+    setEditedCompany(companyToUpdate);
     
     // Close the dialog after saving
     onClose();
