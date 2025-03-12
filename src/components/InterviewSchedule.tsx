@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useInternshipSystem } from "@/hooks/useInternshipSystem";
@@ -9,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Clock, Trash2, Download } from "lucide-react";
 import { InterviewSlot, Student, Company } from "@/types";
+import { downloadExcelFile } from "@/utils/excelUtils";
 
 interface InterviewScheduleProps {
   sortMode: string;
@@ -87,6 +87,82 @@ ${company.remarks || ""}`;
     );
   };
 
+  // Function to download the preference matrix data as Excel
+  const downloadPreferenceMatrix = () => {
+    // Create header row with company names
+    const headers = ["Student", ...companies.map(company => company.name)];
+    
+    // Create data rows
+    const rows = students.map(student => {
+      const rowData = [student.name];
+      companies.forEach(company => {
+        const preference = student.preferences.find(p => p.companyId === company.id);
+        rowData.push(preference && preference.rank >= 1 && preference.rank <= 5 ? preference.rank.toString() : "");
+      });
+      return rowData;
+    });
+    
+    // Add preference count row
+    const preferenceCount = ["Preference Count"];
+    companies.forEach(company => {
+      const count = students.reduce((total, student) => {
+        const hasPreference = student.preferences.some(
+          pref => pref.companyId === company.id && pref.rank >= 1 && pref.rank <= 5
+        );
+        return hasPreference ? total + 1 : total;
+      }, 0);
+      preferenceCount.push(count.toString());
+    });
+    
+    // Combine all rows with headers
+    const allRows = [headers, preferenceCount, ...rows];
+    
+    // Download as Excel
+    downloadExcelFile(allRows, "student_preferences_matrix.xlsx");
+  };
+
+  // Function to download the schedule matrix data as Excel
+  const downloadScheduleMatrix = () => {
+    // Create header row with company names
+    const headers = ["Student", ...companies.map(company => company.name)];
+    
+    // Create data rows
+    const rows = students.map(student => {
+      const rowData = [student.name];
+      
+      companies.forEach(company => {
+        let cellData = "";
+        
+        // Find if there's a booked slot for this student and company
+        const slot = slots.find(
+          s => s.studentId === student.id && s.companyId === company.id && s.booked
+        );
+        
+        if (slot) {
+          const date = format(new Date(slot.date), "MMM d");
+          const time = `${slot.startTime} - ${slot.endTime}`;
+          cellData = `${date}, ${time}`;
+        }
+        
+        rowData.push(cellData);
+      });
+      
+      return rowData;
+    });
+    
+    // Add intake row
+    const intakeRow = ["Intake"];
+    companies.forEach(company => {
+      intakeRow.push(company.intakeNumber.toString());
+    });
+    
+    // Combine all rows with headers
+    const allRows = [headers, intakeRow, ...rows];
+    
+    // Download as Excel
+    downloadExcelFile(allRows, "interview_schedule_matrix.xlsx");
+  };
+
   // Create preference matrix
   const preferenceMatrix = () => {
     if (companies.length === 0 || students.length === 0) {
@@ -106,8 +182,11 @@ ${company.remarks || ""}`;
     
     return (
       <Card className="mb-8">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Student Preferences Matrix</CardTitle>
+          <Button variant="outline" size="sm" onClick={downloadPreferenceMatrix}>
+            <Download className="h-4 w-4 mr-2" /> Export
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -186,8 +265,11 @@ ${company.remarks || ""}`;
     
     return (
       <Card className="mb-8">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Interview Schedule Matrix</CardTitle>
+          <Button variant="outline" size="sm" onClick={downloadScheduleMatrix}>
+            <Download className="h-4 w-4 mr-2" /> Export
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">

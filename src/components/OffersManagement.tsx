@@ -1,12 +1,14 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useInternshipSystem } from "@/hooks/useInternshipSystem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { InterviewSlot } from "@/types";
+import { Download } from "lucide-react";
+import { downloadExcelFile } from "@/utils/excelUtils";
 
 // Define the offer status types
 type OfferStatus = "pending" | "offered" | "accepted" | "rejected" | "withdrawn" | "reserved-1" | "reserved-2" | "reserved-3";
@@ -98,6 +100,44 @@ const OffersManagement = () => {
     return bookedSlots.length === 0 || companies.length === 0 || students.length === 0;
   };
   
+  // Download the offers matrix as Excel
+  const downloadOffersMatrix = () => {
+    // Create header row with company names
+    const headers = ["Student", ...companies.map(company => company.name)];
+    
+    // Create data rows
+    const rows = students.map(student => {
+      const rowData = [student.name];
+      
+      companies.forEach(company => {
+        let cellData = "";
+        const slot = getBookedSlot(student.id, company.id);
+        
+        if (slot) {
+          const slotInfo = formatSlotTime(slot);
+          const status = offerStatuses[student.id]?.[company.id] || "pending";
+          cellData = `${slotInfo.date}, ${slotInfo.time} (${status})`;
+        }
+        
+        rowData.push(cellData);
+      });
+      
+      return rowData;
+    });
+    
+    // Add intake row
+    const intakeRow = ["Intake"];
+    companies.forEach(company => {
+      intakeRow.push(company.intakeNumber.toString());
+    });
+    
+    // Combine all rows with headers
+    const allRows = [headers, intakeRow, ...rows];
+    
+    // Download as Excel
+    downloadExcelFile(allRows, "offers_status_matrix.xlsx");
+  };
+  
   if (isMatrixEmpty()) {
     return (
       <div className="flex flex-col items-center justify-center p-8">
@@ -116,8 +156,11 @@ const OffersManagement = () => {
       </div>
       
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Offers Status Matrix</CardTitle>
+          <Button variant="outline" size="sm" onClick={downloadOffersMatrix}>
+            <Download className="h-4 w-4 mr-2" /> Export
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
