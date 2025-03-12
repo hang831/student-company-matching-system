@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CompanyList from "@/components/CompanyList";
@@ -16,7 +15,6 @@ import { toast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import InterviewSortingOptions from "@/components/InterviewSortingOptions";
 import LocalStorageUtils from "@/components/LocalStorageUtils";
-
 const Dashboard = () => {
   const {
     importCompanies,
@@ -35,11 +33,9 @@ const Dashboard = () => {
     return saved ? parseInt(saved) : 5;
   });
   const [interviewSortMode, setInterviewSortMode] = useState("date");
-
   useEffect(() => {
     localStorage.setItem('maxPreferences', maxPreferences.toString());
   }, [maxPreferences]);
-  
   const handleDownloadTemplate = (type: "companies" | "students" | "preferences") => {
     if (type === "companies") {
       const template = generateCompanyTemplate();
@@ -64,29 +60,23 @@ const Dashboard = () => {
       });
     }
   };
-  
   const handleImportClick = (type: "companies" | "students" | "preferences") => {
     setImportType(type);
     setIsImportDialogOpen(true);
   };
-  
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    
     const reader = new FileReader();
-    reader.onload = async (e) => {
+    reader.onload = async e => {
       try {
         const csvContent = e.target?.result as string;
         console.log("CSV Content:", csvContent);
-        
         if (importType === "companies") {
           const parsedData = parseCSV(csvContent);
           console.log("Parsed Company Data:", parsedData);
-          
           const companyData = mapCSVToCompanyData(parsedData);
           console.log("Mapped Company Data:", companyData);
-          
           if (companyData.length === 0) {
             toast({
               title: "Import Failed",
@@ -95,7 +85,6 @@ const Dashboard = () => {
             });
             return;
           }
-          
           importCompanies(companyData);
           toast({
             title: "Import Successful",
@@ -104,10 +93,8 @@ const Dashboard = () => {
         } else if (importType === "students") {
           const parsedData = parseCSV(csvContent);
           console.log("Parsed Student Data:", parsedData);
-          
           const studentData = mapCSVToStudentData(parsedData);
           console.log("Mapped Student Data:", studentData);
-          
           if (studentData.length === 0) {
             toast({
               title: "Import Failed",
@@ -116,7 +103,6 @@ const Dashboard = () => {
             });
             return;
           }
-          
           importStudents(studentData);
           toast({
             title: "Import Successful",
@@ -125,10 +111,8 @@ const Dashboard = () => {
         } else {
           const parsedData = parseCSV(csvContent);
           console.log("Parsed Preferences Data:", parsedData);
-          
           const preferencesData = mapCSVToPreferencesData(parsedData);
           console.log("Mapped Preferences Data:", preferencesData);
-          
           if (preferencesData.length === 0) {
             toast({
               title: "Import Failed",
@@ -137,22 +121,18 @@ const Dashboard = () => {
             });
             return;
           }
-          
           importPreferences(preferencesData);
           toast({
             title: "Import Successful",
             description: `Student preferences imported successfully.`
           });
         }
-        
         setIsImportDialogOpen(false);
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
-
         refresh();
         setForceRender(prev => prev + 1);
-        
       } catch (error) {
         console.error("Import error:", error);
         toast({
@@ -164,7 +144,6 @@ const Dashboard = () => {
     };
     reader.readAsText(file);
   };
-  
   const handleRefresh = () => {
     refresh();
     setForceRender(prev => prev + 1);
@@ -173,12 +152,10 @@ const Dashboard = () => {
       description: "The system data has been refreshed."
     });
   };
-  
   const handleDataImportSuccess = () => {
     refresh();
     setForceRender(prev => prev + 1);
   };
-  
   return <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col space-y-6">
         <div className="flex flex-col space-y-2">
@@ -247,13 +224,9 @@ const Dashboard = () => {
               <Upload className="mr-2 h-4 w-4" /> Import Students
             </Button>
             
-            <Button variant="outline" onClick={() => handleDownloadTemplate("companies")}>
-              <FileSpreadsheet className="mr-2 h-4 w-4" /> Company Template
-            </Button>
             
-            <Button variant="outline" onClick={() => handleDownloadTemplate("students")}>
-              <FileSpreadsheet className="mr-2 h-4 w-4" /> Student Template
-            </Button>
+            
+            
           </div>
         </div>
 
@@ -272,10 +245,7 @@ const Dashboard = () => {
           </TabsContent>
           <TabsContent value="schedule" key={`schedule-${forceRender}`}>
             <div>
-              <InterviewSortingOptions 
-                sortMode={interviewSortMode} 
-                onSortChange={setInterviewSortMode} 
-              />
+              <InterviewSortingOptions sortMode={interviewSortMode} onSortChange={setInterviewSortMode} />
               <InterviewSchedule sortMode={interviewSortMode} />
             </div>
           </TabsContent>
@@ -286,5 +256,4 @@ const Dashboard = () => {
       </div>
     </div>;
 };
-
 export default Dashboard;
