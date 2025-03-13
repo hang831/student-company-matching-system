@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useInternshipSystem } from "@/hooks/useInternshipSystem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Clock, Trash2, Download } from "lucide-react";
 import { InterviewSlot, Student, Company } from "@/types";
@@ -475,10 +476,18 @@ ${company.remarks || ""}`;
       })}
 
       {selectedSlot && (
-        <Dialog open={!!selectedSlot} onOpenChange={(open) => !open && setSelectedSlot(null)}>
-          <DialogContent>
+        <Dialog open={!!selectedSlot} onOpenChange={(open) => {
+          if (!open) {
+            // Add a small delay before closing to prevent crashes
+            setTimeout(() => setSelectedSlot(null), 100);
+          }
+        }}>
+          <DialogContent aria-describedby="slot-booking-description">
             <DialogHeader>
               <DialogTitle>{selectedSlot.booked ? "Edit" : "Book"} Interview Slot</DialogTitle>
+              <DialogDescription id="slot-booking-description">
+                Select a student to book this interview slot.
+              </DialogDescription>
             </DialogHeader>
             <div className="py-4 space-y-4">
               <div>
@@ -510,7 +519,9 @@ ${company.remarks || ""}`;
               </div>
             </div>
             <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setSelectedSlot(null)}>
+              <Button variant="outline" onClick={() => {
+                setTimeout(() => setSelectedSlot(null), 100);
+              }}>
                 Cancel
               </Button>
               <Button onClick={handleBookSlot} disabled={!selectedStudentId}>
