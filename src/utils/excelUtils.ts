@@ -1,3 +1,4 @@
+
 import { CompanyImportData, StudentImportData, PreferenceImportData } from "@/types";
 
 // Function to generate Excel template for companies
@@ -104,24 +105,74 @@ export const downloadExcelFile = (data: string[][], filename: string) => {
   document.body.removeChild(link);
 };
 
-// Function to parse CSV data for import
+// Improved CSV parsing function that handles Excel exports better
 export function parseCSV<T>(csv: string): T[] {
-  const lines = csv.split('\n');
-  if (lines.length < 2) return []; // Need at least headers and one data row
+  console.log("Raw CSV data:", csv);
   
-  const headers = lines[0].split(',').map(h => h.trim());
+  // Split by newlines, handling both \r\n and \n
+  const lines = csv.split(/\r?\n/);
+  if (lines.length < 2) {
+    console.error("CSV has less than 2 lines (no data)");
+    return [];
+  }
+  
+  // Get and clean headers (remove BOM if present)
+  let headers = lines[0].split(',').map(h => {
+    let header = h.trim();
+    // Remove BOM character if present
+    if (header.charCodeAt(0) === 65279) {
+      header = header.substring(1);
+    }
+    return header;
+  });
+  
+  console.log("Headers detected:", headers);
+  
   const results: T[] = [];
   
+  // Process each data row
   for (let i = 1; i < lines.length; i++) {
-    if (!lines[i].trim()) continue; // Skip empty lines
+    const line = lines[i].trim();
+    if (!line) continue; // Skip empty lines
     
-    const values = lines[i].split(',').map(v => v.trim());
+    // Split the line into values, respecting quoted values
+    const values: string[] = [];
+    let inQuotes = false;
+    let currentValue = '';
+    
+    for (let j = 0; j < line.length; j++) {
+      const char = line[j];
+      
+      if (char === '"') {
+        // Toggle quote mode
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        // End of a field
+        values.push(currentValue.trim());
+        currentValue = '';
+      } else {
+        // Part of a field
+        currentValue += char;
+      }
+    }
+    
+    // Add the last value
+    values.push(currentValue.trim());
+    
+    // If values length is less than headers, expand with empty strings
+    while (values.length < headers.length) {
+      values.push('');
+    }
+    
+    console.log(`Row ${i} values:`, values);
+    
     const obj = {} as any;
     
     headers.forEach((header, index) => {
       if (index < values.length) {
         // Normalize header names by converting to lowercase and removing spaces
-        obj[header.toLowerCase().replace(/\s+/g, '')] = values[index];
+        const normalizedHeader = header.toLowerCase().replace(/\s+/g, '');
+        obj[normalizedHeader] = values[index];
       }
     });
     
@@ -131,54 +182,68 @@ export function parseCSV<T>(csv: string): T[] {
     }
   }
   
-  console.log("Parse CSV Results:", results); // Debug log
+  console.log("Parsed CSV results:", results);
   return results;
 }
 
 // Map CSV data to company structure
 export const mapCSVToCompanyData = (csvData: any[]): CompanyImportData[] => {
-  console.log("Mapping CSV to company data:", csvData); // Debug log
+  console.log("Mapping CSV to company data:", csvData);
   return csvData.map(row => {
+    // Debug each row mapping
+    console.log("Processing row:", row);
+    console.log("Row properties:", Object.keys(row));
+    
+    // Check for variations of field names that might come from Excel
+    const name = row.name || row.Name || "";
+    const description = row.description || row.Description || "";
+    const intakeNumber = parseInt(row.intakenumber || row.intakeNumber || row["Intake Number"] || row["intakenumber"] || "1", 10) || 1;
+    const interviewPlace = row.interviewplace || row.interviewPlace || row["Interview Place"] || row["interviewplace"] || "";
+    const contactPerson = row.contactperson || row.contactPerson || row["Contact Person"] || row["contactperson"] || "";
+    const allowance = row.allowance || row.Allowance || "";
+    const remarks = row.remarks || row.Remarks || "";
+    
     const result = {
-      name: row.name || "",
-      description: row.description || "",
-      intakeNumber: parseInt(row.intakenumber || "0", 10) || 1,
-      interviewPlace: row.interviewplace || "",
-      contactPerson: row.contactperson || "",
-      allowance: row.allowance || "",
-      remarks: row.remarks || ""
+      name,
+      description,
+      intakeNumber,
+      interviewPlace,
+      contactPerson,
+      allowance,
+      remarks
     };
-    console.log("Mapped company:", result); // Debug log
+    
+    console.log("Mapped company:", result);
     return result;
   });
 };
 
 // Map CSV data to student structure
 export const mapCSVToStudentData = (csvData: any[]): StudentImportData[] => {
-  console.log("Mapping CSV to student data:", csvData); // Debug log
+  console.log("Mapping CSV to student data:", csvData);
   return csvData.map(row => {
     const result = {
-      name: row.name || "",
-      email: row.email || "",
-      studentId: row.studentid || "",
-      tel: row.telephone || "",
-      gpa: row.gpa || ""
+      name: row.name || row.Name || "",
+      email: row.email || row.Email || "",
+      studentId: row.studentid || row.studentId || row["Student ID"] || row["studentid"] || "",
+      tel: row.telephone || row.tel || row.Telephone || row.Tel || "",
+      gpa: row.gpa || row.GPA || ""
     };
-    console.log("Mapped student:", result); // Debug log
+    console.log("Mapped student:", result);
     return result;
   });
 };
 
 // Map CSV data to student preferences structure
 export const mapCSVToPreferencesData = (csvData: any[]): PreferenceImportData[] => {
-  console.log("Mapping CSV to preferences data:", csvData); // Debug log
+  console.log("Mapping CSV to preferences data:", csvData);
   return csvData.map(row => {
     const result = {
-      studentId: row.studentid || "",
-      companyName: row.companyname || "",
-      rank: parseInt(row.preferencerank || "0", 10) || 1
+      studentId: row.studentid || row.studentId || row["Student ID"] || row["studentid"] || "",
+      companyName: row.companyname || row.companyName || row["Company Name"] || row["companyname"] || "",
+      rank: parseInt(row.preferencerank || row.preferenceRank || row["Preference Rank"] || row["preferencerank"] || "0", 10) || 1
     };
-    console.log("Mapped preference:", result); // Debug log
+    console.log("Mapped preference:", result);
     return result;
   });
 };
