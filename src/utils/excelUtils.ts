@@ -1,4 +1,3 @@
-
 import { CompanyImportData, StudentImportData, PreferenceImportData } from "@/types";
 
 // Function to generate Excel template for companies
@@ -105,7 +104,7 @@ export const downloadExcelFile = (data: string[][], filename: string) => {
   document.body.removeChild(link);
 };
 
-// Improved CSV parsing function that handles Excel exports better
+// Improved CSV parsing function that handles Excel exports better, especially with quoted fields
 export function parseCSV<T>(csv: string): T[] {
   console.log("Raw CSV data:", csv);
   
@@ -130,49 +129,60 @@ export function parseCSV<T>(csv: string): T[] {
   
   const results: T[] = [];
   
-  // Process each data row
+  // Process each data row - completely rewritten to better handle quoted fields
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line) continue; // Skip empty lines
     
-    // Split the line into values, respecting quoted values
+    // Split the row into values, handling quoted fields properly
     const values: string[] = [];
-    let inQuotes = false;
     let currentValue = '';
+    let inQuotes = false;
     
     for (let j = 0; j < line.length; j++) {
       const char = line[j];
       
       if (char === '"') {
-        // Toggle quote mode
-        inQuotes = !inQuotes;
+        // If we see a double quote inside a quoted string, and the next char is also a quote, 
+        // it's an escaped quote (Excel style)
+        if (inQuotes && j + 1 < line.length && line[j + 1] === '"') {
+          currentValue += '"';
+          j++; // Skip the next quote since we're treating it as part of the value
+        } else {
+          // Toggle quote mode
+          inQuotes = !inQuotes;
+        }
       } else if (char === ',' && !inQuotes) {
-        // End of a field
-        values.push(currentValue.trim());
+        // End of a field (but only if we're not inside quotes)
+        values.push(currentValue);
         currentValue = '';
       } else {
-        // Part of a field
+        // Part of the field value
         currentValue += char;
       }
     }
     
     // Add the last value
-    values.push(currentValue.trim());
+    values.push(currentValue);
     
-    // If values length is less than headers, expand with empty strings
+    // Debug
+    console.log(`Row ${i} raw: ${line}`);
+    console.log(`Row ${i} parsed values:`, values);
+    
+    // If we have fewer values than headers, add empty strings for missing values
     while (values.length < headers.length) {
       values.push('');
     }
     
-    console.log(`Row ${i} values:`, values);
-    
+    // Create an object from headers and values
     const obj = {} as any;
     
+    // Map each value to its corresponding header
     headers.forEach((header, index) => {
       if (index < values.length) {
-        // Normalize header names by converting to lowercase and removing spaces
+        // Normalize header to lowercase and remove spaces
         const normalizedHeader = header.toLowerCase().replace(/\s+/g, '');
-        obj[normalizedHeader] = values[index];
+        obj[normalizedHeader] = values[index].trim();
       }
     });
     
@@ -186,7 +196,7 @@ export function parseCSV<T>(csv: string): T[] {
   return results;
 }
 
-// Map CSV data to company structure
+// Map CSV data to company structure with better field alignment
 export const mapCSVToCompanyData = (csvData: any[]): CompanyImportData[] => {
   console.log("Mapping CSV to company data:", csvData);
   return csvData.map(row => {
@@ -194,12 +204,12 @@ export const mapCSVToCompanyData = (csvData: any[]): CompanyImportData[] => {
     console.log("Processing row:", row);
     console.log("Row properties:", Object.keys(row));
     
-    // Check for variations of field names that might come from Excel
+    // Check for exact header names directly from the template
     const name = row.name || row.Name || "";
     const description = row.description || row.Description || "";
-    const intakeNumber = parseInt(row.intakenumber || row.intakeNumber || row["Intake Number"] || row["intakenumber"] || "1", 10) || 1;
-    const interviewPlace = row.interviewplace || row.interviewPlace || row["Interview Place"] || row["interviewplace"] || "";
-    const contactPerson = row.contactperson || row.contactPerson || row["Contact Person"] || row["contactperson"] || "";
+    const intakeNumber = parseInt(row.intakenumber || row["intakenumber"] || row["intake number"] || row["Intake Number"] || "1", 10) || 1;
+    const interviewPlace = row.interviewplace || row["interviewplace"] || row["interview place"] || row["Interview Place"] || "";
+    const contactPerson = row.contactperson || row["contactperson"] || row["contact person"] || row["Contact Person"] || "";
     const allowance = row.allowance || row.Allowance || "";
     const remarks = row.remarks || row.Remarks || "";
     
