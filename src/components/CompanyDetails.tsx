@@ -29,31 +29,37 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
   
   // Refresh company data whenever it changes or tab changes
   useEffect(() => {
+    // Initial full refresh when component mounts
+    const refreshedCompany = getCompanyById(company.id);
+    if (refreshedCompany) {
+      setEditedCompany(JSON.parse(JSON.stringify(refreshedCompany)));
+    }
+    
     const refreshData = () => {
       const refreshedCompany = getCompanyById(company.id);
       if (refreshedCompany) {
-        // When on Timeslots or Interviews tab, do a full refresh to show latest data
-        if (activeTab === "timeslots" || activeTab === "interviews") {
-          setEditedCompany(JSON.parse(JSON.stringify(refreshedCompany)));
-        } else {
-          // For details tab, only update slots data to preserve form edits
-          setEditedCompany(prevCompany => {
-            // Create a deep copy of the previous state to avoid mutation
-            const updatedCompany = JSON.parse(JSON.stringify(prevCompany));
-            // Only update availableSlots to preserve edits in details tab
-            updatedCompany.availableSlots = JSON.parse(JSON.stringify(refreshedCompany.availableSlots));
-            return updatedCompany;
-          });
-        }
+        // Always do a full refresh to show latest data
+        setEditedCompany(JSON.parse(JSON.stringify(refreshedCompany)));
       }
     };
     
-    refreshData();
     // Set up a small interval to refresh data periodically
     const intervalId = setInterval(refreshData, 1000);
     
     return () => clearInterval(intervalId);
   }, [company.id, getCompanyById, activeTab]);
+
+  // Force refresh when tab changes
+  useEffect(() => {
+    // Force a refresh when tab changes
+    refresh();
+    
+    // Get latest company data
+    const refreshedCompany = getCompanyById(company.id);
+    if (refreshedCompany) {
+      setEditedCompany(JSON.parse(JSON.stringify(refreshedCompany)));
+    }
+  }, [activeTab, company.id, getCompanyById, refresh]);
 
   // Format time for display (convert "1930" to "19:30")
   const formatTimeForDisplay = (time: string) => {
@@ -97,11 +103,10 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
       });
       
       // Close the dialog after saving
-      // Use a slight delay to ensure the update has propagated to the data store
       setTimeout(() => {
         refresh(); // Refresh one more time before closing
         onClose();
-      }, 300);
+      }, 500);
     } catch (error) {
       console.error("Error saving company details:", error);
       toast({
@@ -115,18 +120,13 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
   const handleToggleAvailability = useCallback((slotId: string) => {
     if (toggleSlotAvailability(slotId)) {
       // Update the company data after toggling
+      refresh();
       const refreshedCompany = getCompanyById(company.id);
       if (refreshedCompany) {
-        setEditedCompany(prevState => {
-          // Create a deep copy of the previous state
-          const updatedCompany = JSON.parse(JSON.stringify(prevState));
-          // Update only the availableSlots property
-          updatedCompany.availableSlots = JSON.parse(JSON.stringify(refreshedCompany.availableSlots));
-          return updatedCompany;
-        });
+        setEditedCompany(JSON.parse(JSON.stringify(refreshedCompany)));
       }
     }
-  }, [toggleSlotAvailability, company.id, getCompanyById]);
+  }, [toggleSlotAvailability, company.id, getCompanyById, refresh]);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -234,38 +234,46 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {editedCompany.availableSlots.map((slot) => {
-                  const student = slot.studentId ? getStudentById(slot.studentId) : null;
-                  
-                  return (
-                    <TableRow key={slot.id} className={!slot.isAvailable ? "opacity-60" : ""}>
-                      <TableCell>{format(new Date(slot.date), "MMM d, yyyy")}</TableCell>
-                      <TableCell className="flex items-center">
-                        <Clock className="h-4 w-4 mr-2" />
-                        {formatTimeForDisplay(slot.startTime)} - {formatTimeForDisplay(slot.endTime)}
-                      </TableCell>
-                      <TableCell>
-                        <Switch
-                          checked={slot.isAvailable}
-                          onCheckedChange={() => handleToggleAvailability(slot.id)}
-                          disabled={slot.booked}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {slot.booked ? (
-                          <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                            Booked
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                            {slot.isAvailable ? "Available" : "Unavailable"}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>{student?.name || "-"}</TableCell>
-                    </TableRow>
-                  );
-                })}
+                {editedCompany.availableSlots && editedCompany.availableSlots.length > 0 ? (
+                  editedCompany.availableSlots.map((slot) => {
+                    const student = slot.studentId ? getStudentById(slot.studentId) : null;
+                    
+                    return (
+                      <TableRow key={slot.id} className={!slot.isAvailable ? "opacity-60" : ""}>
+                        <TableCell>{format(new Date(slot.date), "MMM d, yyyy")}</TableCell>
+                        <TableCell className="flex items-center">
+                          <Clock className="h-4 w-4 mr-2" />
+                          {formatTimeForDisplay(slot.startTime)} - {formatTimeForDisplay(slot.endTime)}
+                        </TableCell>
+                        <TableCell>
+                          <Switch
+                            checked={slot.isAvailable}
+                            onCheckedChange={() => handleToggleAvailability(slot.id)}
+                            disabled={slot.booked}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {slot.booked ? (
+                            <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                              Booked
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                              {slot.isAvailable ? "Available" : "Unavailable"}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>{student?.name || "-"}</TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-4">
+                      No interview slots available
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </TabsContent>

@@ -19,10 +19,10 @@ export const useInternshipSystem = () => {
         // Ensure dates are properly converted back to Date objects
         return parsed.map((company: Company) => ({
           ...company,
-          availableSlots: company.availableSlots.map((slot) => ({
+          availableSlots: company.availableSlots?.map((slot) => ({
             ...slot,
             date: new Date(slot.date)
-          }))
+          })) || []
         }));
       }
       return mockCompanies;
@@ -40,10 +40,10 @@ export const useInternshipSystem = () => {
         // Ensure dates are properly converted back to Date objects
         return parsed.map((student: Student) => ({
           ...student,
-          bookedInterviews: student.bookedInterviews.map((slot) => ({
+          bookedInterviews: student.bookedInterviews?.map((slot) => ({
             ...slot,
             date: new Date(slot.date)
-          }))
+          })) || []
         }));
       }
       return mockStudents;
@@ -106,10 +106,10 @@ export const useInternshipSystem = () => {
         // Ensure dates are properly converted back to Date objects
         setCompanies(parsedCompanies.map((company: Company) => ({
           ...company,
-          availableSlots: company.availableSlots.map((slot) => ({
+          availableSlots: company.availableSlots?.map((slot) => ({
             ...slot,
             date: new Date(slot.date)
-          }))
+          })) || []
         })));
       }
       
@@ -118,10 +118,10 @@ export const useInternshipSystem = () => {
         // Ensure dates are properly converted back to Date objects
         setStudents(parsedStudents.map((student: Student) => ({
           ...student,
-          bookedInterviews: student.bookedInterviews.map((slot) => ({
+          bookedInterviews: student.bookedInterviews?.map((slot) => ({
             ...slot,
             date: new Date(slot.date)
-          }))
+          })) || []
         })));
       }
       

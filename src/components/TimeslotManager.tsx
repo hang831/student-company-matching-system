@@ -17,25 +17,28 @@ interface TimeslotManagerProps {
 }
 
 const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
-  const { addTimeslot, removeTimeslot, getCompanyById } = useInternshipSystem();
+  const { addTimeslot, removeTimeslot, getCompanyById, refresh } = useInternshipSystem();
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [startTime, setStartTime] = useState<string>("");
   const [endTime, setEndTime] = useState<string>("");
   const [company, setCompany] = useState(getCompanyById(companyId));
   
-  // Refresh company data whenever it changes
+  // Force refresh on initial load and every 2 seconds
   useEffect(() => {
-    const refreshData = () => {
+    // Initial refresh
+    refresh();
+    const refreshedCompany = getCompanyById(companyId);
+    setCompany(refreshedCompany);
+    
+    // Set up periodic refresh
+    const intervalId = setInterval(() => {
+      refresh();
       const refreshedCompany = getCompanyById(companyId);
       setCompany(refreshedCompany);
-    };
-    
-    refreshData();
-    // Set up a small interval to refresh data periodically
-    const intervalId = setInterval(refreshData, 1000);
+    }, 2000);
     
     return () => clearInterval(intervalId);
-  }, [companyId, getCompanyById]);
+  }, [companyId, getCompanyById, refresh]);
   
   const handleAddTimeslot = () => {
     if (!date || !startTime || !endTime) {
@@ -74,8 +77,15 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
       setStartTime("");
       setEndTime("");
       
-      // Force refresh company data
-      setCompany(getCompanyById(companyId));
+      // Force refresh data
+      refresh();
+      const refreshedCompany = getCompanyById(companyId);
+      setCompany(refreshedCompany);
+      
+      toast({
+        title: "Timeslot Added",
+        description: "New interview timeslot has been added successfully.",
+      });
     }
   };
 
@@ -157,7 +167,7 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
         </Button>
       </div>
       
-      {company && company.availableSlots.length > 0 && (
+      {company && company.availableSlots && company.availableSlots.length > 0 ? (
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Current Timeslots</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -178,6 +188,7 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
                   onClick={() => {
                     if (removeTimeslot(slot.id)) {
                       // Force refresh company data after removal
+                      refresh();
                       setCompany(getCompanyById(companyId));
                     }
                   }}
@@ -188,6 +199,10 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
               </div>
             ))}
           </div>
+        </div>
+      ) : (
+        <div className="text-center py-4 text-muted-foreground">
+          No timeslots available. Add one above.
         </div>
       )}
     </div>
