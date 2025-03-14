@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useInternshipSystem } from "@/hooks/useInternshipSystem";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Company } from "@/types";
 import { Clock } from "lucide-react";
 import TimeslotManager from "./TimeslotManager";
+import { toast } from "@/hooks/use-toast";
 
 interface CompanyDetailsProps {
   company: Company;
@@ -26,7 +27,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
   });
   const [activeTab, setActiveTab] = useState("details");
   
-  // Refresh only the slots data whenever company changes
+  // Refresh company data whenever it changes
   useEffect(() => {
     const refreshData = () => {
       const refreshedCompany = getCompanyById(company.id);
@@ -56,27 +57,41 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
     }));
   };
 
-  const handleSave = () => {
-    // Make a full deep copy of the edited company with all form changes
-    const companyToUpdate = JSON.parse(JSON.stringify(editedCompany));
-    
-    // Get the latest availableSlots data directly from the source
-    const latestCompany = getCompanyById(company.id);
-    if (latestCompany) {
-      companyToUpdate.availableSlots = JSON.parse(JSON.stringify(latestCompany.availableSlots));
+  const handleSave = useCallback(() => {
+    try {
+      // Make a full deep copy of the edited company with all form changes
+      const companyToUpdate = JSON.parse(JSON.stringify(editedCompany));
+      
+      // Get the latest availableSlots data directly from the source
+      const latestCompany = getCompanyById(company.id);
+      if (latestCompany) {
+        companyToUpdate.availableSlots = JSON.parse(JSON.stringify(latestCompany.availableSlots));
+      }
+      
+      // Call the update function with our updated company object
+      updateCompany(companyToUpdate);
+      
+      toast({
+        title: "Company Updated",
+        description: "Company information has been saved successfully.",
+      });
+      
+      // Close the dialog after saving
+      // Use a slight delay to ensure the update has propagated to the data store
+      setTimeout(() => {
+        onClose();
+      }, 100);
+    } catch (error) {
+      console.error("Error saving company details:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save company details. Please try again.",
+        variant: "destructive",
+      });
     }
-    
-    // Call the update function with our updated company object
-    updateCompany(companyToUpdate);
-    
-    // Close the dialog after saving
-    // Use a slight delay to ensure the update has propagated to the data store
-    setTimeout(() => {
-      onClose();
-    }, 100);
-  };
+  }, [editedCompany, company.id, getCompanyById, updateCompany, onClose]);
 
-  const handleToggleAvailability = (slotId: string) => {
+  const handleToggleAvailability = useCallback((slotId: string) => {
     if (toggleSlotAvailability(slotId)) {
       // Update the company data after toggling
       const refreshedCompany = getCompanyById(company.id);
@@ -90,7 +105,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
         });
       }
     }
-  };
+  }, [toggleSlotAvailability, company.id, getCompanyById]);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -212,6 +227,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
                         <Switch
                           checked={slot.isAvailable}
                           onCheckedChange={() => handleToggleAvailability(slot.id)}
+                          disabled={slot.booked}
                         />
                       </TableCell>
                       <TableCell>

@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { CalendarIcon, Clock, Trash } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InterviewSlot } from "@/types";
+import { toast } from "@/hooks/use-toast";
 
 interface TimeslotManagerProps {
   companyId: string;
@@ -38,20 +39,44 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
   
   const handleAddTimeslot = () => {
     if (!date || !startTime || !endTime) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide date, start time, and end time.",
+        variant: "destructive"
+      });
       return;
     }
     
-    addTimeslot({
-      date,
+    // Validate time format (HH:MM)
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
+      toast({
+        title: "Invalid Time Format",
+        description: "Please use the HH:MM format (e.g., 09:30).",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Create a new date object to ensure it's passed properly
+    const slotDate = new Date(date);
+    
+    const success = addTimeslot({
+      date: slotDate,
       startTime,
       endTime,
       companyId,
     });
     
-    // Reset form
-    setDate(undefined);
-    setStartTime("");
-    setEndTime("");
+    if (success) {
+      // Reset form
+      setDate(undefined);
+      setStartTime("");
+      setEndTime("");
+      
+      // Force refresh company data
+      setCompany(getCompanyById(companyId));
+    }
   };
 
   return (
@@ -137,7 +162,10 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
                   variant="ghost" 
                   size="sm"
                   onClick={() => {
-                    removeTimeslot(slot.id);
+                    if (removeTimeslot(slot.id)) {
+                      // Force refresh company data after removal
+                      setCompany(getCompanyById(companyId));
+                    }
                   }}
                   disabled={slot.booked}
                 >

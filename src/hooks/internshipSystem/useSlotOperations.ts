@@ -73,56 +73,106 @@ export const useSlotOperations = (
     endTime: string; 
     companyId: string; 
   }) => {
-    const newSlot: InterviewSlot = {
-      id: `slot-${Date.now()}`,
-      date: new Date(date),
-      startTime,
-      endTime,
-      companyId,
-      booked: false,
-      isAvailable: true,
-    };
-    
-    // Add to global slots
-    const updatedSlots = [...slots, newSlot];
-    setSlots(updatedSlots);
-    
-    // Add to company available slots
-    const updatedCompanies = companies.map((company) => {
-      if (company.id === companyId) {
-        return {
-          ...company,
-          availableSlots: [...company.availableSlots, newSlot],
-        };
+    try {
+      // Find the company
+      const company = companies.find(c => c.id === companyId);
+      if (!company) {
+        toast({
+          title: "Error",
+          description: "Company not found.",
+          variant: "destructive",
+        });
+        return false;
       }
-      return company;
-    });
-    
-    setCompanies(updatedCompanies);
-    
-    toast({
-      title: "Timeslot added",
-      description: "A new interview timeslot has been added.",
-    });
-  };
-  
-  // Remove timeslot
-  const removeTimeslot = (slotId: string) => {
-    const slot = slots.find((s) => s.id === slotId);
-    
-    if (!slot) {
+      
+      // Ensure date is a proper Date object
+      const slotDate = new Date(date);
+      if (isNaN(slotDate.getTime())) {
+        toast({
+          title: "Error",
+          description: "Invalid date format.",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      // Create new slot object
+      const newSlot: InterviewSlot = {
+        id: `slot-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        date: slotDate,
+        startTime,
+        endTime,
+        companyId,
+        booked: false,
+        isAvailable: true,
+      };
+      
+      // Update global slots state with immutable pattern
+      const updatedSlots = [...slots, newSlot];
+      setSlots(updatedSlots);
+      
+      // Update company state with immutable pattern
+      const updatedCompanies = companies.map((company) => {
+        if (company.id === companyId) {
+          return {
+            ...company,
+            availableSlots: [...company.availableSlots, newSlot],
+          };
+        }
+        return company;
+      });
+      
+      // Set the updated companies state
+      setCompanies(updatedCompanies);
+      
+      // Save to localStorage immediately to ensure persistence
+      localStorage.setItem('slots', JSON.stringify(updatedSlots));
+      localStorage.setItem('companies', JSON.stringify(updatedCompanies));
+      
+      toast({
+        title: "Timeslot added",
+        description: "A new interview timeslot has been added.",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error adding timeslot:", error);
       toast({
         title: "Error",
-        description: "Interview slot not found.",
+        description: "Failed to add timeslot. Please try again.",
         variant: "destructive",
       });
       return false;
     }
-    
-    // Remove from student booked interviews if it was booked
-    if (slot.booked && slot.studentId) {
-      setStudents(
-        students.map(student => {
+  };
+  
+  // Remove timeslot
+  const removeTimeslot = (slotId: string) => {
+    try {
+      const slot = slots.find((s) => s.id === slotId);
+      
+      if (!slot) {
+        toast({
+          title: "Error",
+          description: "Interview slot not found.",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      // Prevent removing booked slots
+      if (slot.booked) {
+        toast({
+          title: "Cannot Remove",
+          description: "This slot is already booked and cannot be removed.",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      // Remove from student booked interviews if it was booked
+      if (slot.studentId) {
+        const updatedStudents = students.map(student => {
           if (student.id === slot.studentId) {
             return {
               ...student,
@@ -132,51 +182,65 @@ export const useSlotOperations = (
             };
           }
           return student;
-        })
-      );
-    }
-    
-    // Remove from global slots
-    const updatedSlots = slots.filter((s) => s.id !== slotId);
-    setSlots(updatedSlots);
-    
-    // Remove from company available slots
-    const updatedCompanies = companies.map((company) => {
-      if (company.id === slot.companyId) {
-        return {
-          ...company,
-          availableSlots: company.availableSlots.filter((s) => s.id !== slotId),
-        };
+        });
+        setStudents(updatedStudents);
+        localStorage.setItem('students', JSON.stringify(updatedStudents));
       }
-      return company;
-    });
-    
-    setCompanies(updatedCompanies);
-    
-    toast({
-      title: "Timeslot removed",
-      description: "The interview timeslot has been removed.",
-    });
-    
-    return true;
-  };
-
-  // Book interview slot
-  const bookInterviewSlot = (slotId: string, studentId: string) => {
-    const slot = slots.find((s) => s.id === slotId);
-    if (!slot) {
+      
+      // Remove from global slots
+      const updatedSlots = slots.filter((s) => s.id !== slotId);
+      setSlots(updatedSlots);
+      
+      // Remove from company available slots
+      const updatedCompanies = companies.map((company) => {
+        if (company.id === slot.companyId) {
+          return {
+            ...company,
+            availableSlots: company.availableSlots.filter((s) => s.id !== slotId),
+          };
+        }
+        return company;
+      });
+      
+      setCompanies(updatedCompanies);
+      
+      // Save to localStorage immediately to ensure persistence
+      localStorage.setItem('slots', JSON.stringify(updatedSlots));
+      localStorage.setItem('companies', JSON.stringify(updatedCompanies));
+      
+      toast({
+        title: "Timeslot removed",
+        description: "The interview timeslot has been removed.",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error removing timeslot:", error);
       toast({
         title: "Error",
-        description: "Interview slot not found.",
+        description: "Failed to remove timeslot. Please try again.",
         variant: "destructive",
       });
       return false;
     }
+  };
 
-    // If this slot was previously booked by another student, update that student's bookings
-    if (slot.booked && slot.studentId && slot.studentId !== studentId) {
-      setStudents(
-        students.map((student) => {
+  // Book interview slot
+  const bookInterviewSlot = (slotId: string, studentId: string) => {
+    try {
+      const slot = slots.find((s) => s.id === slotId);
+      if (!slot) {
+        toast({
+          title: "Error",
+          description: "Interview slot not found.",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // If this slot was previously booked by another student, update that student's bookings
+      if (slot.booked && slot.studentId && slot.studentId !== studentId) {
+        const updatedStudents = students.map((student) => {
           if (student.id === slot.studentId) {
             return {
               ...student,
@@ -186,26 +250,28 @@ export const useSlotOperations = (
             };
           }
           return student;
-        })
-      );
-    }
+        });
+        setStudents(updatedStudents);
+        localStorage.setItem('students', JSON.stringify(updatedStudents));
+      }
 
-    if (!slot.isAvailable) {
-      toast({
-        title: "Error",
-        description: "This slot is not available for booking.",
-        variant: "destructive",
-      });
-      return false;
-    }
+      if (!slot.isAvailable) {
+        toast({
+          title: "Error",
+          description: "This slot is not available for booking.",
+          variant: "destructive",
+        });
+        return false;
+      }
 
-    const updatedSlot = { ...slot, booked: true, studentId };
-    setSlots(
-      slots.map((s) => (s.id === slotId ? updatedSlot : s))
-    );
+      const updatedSlot = { ...slot, booked: true, studentId };
+      
+      // Update global slots
+      const updatedSlots = slots.map((s) => (s.id === slotId ? updatedSlot : s));
+      setSlots(updatedSlots);
 
-    setCompanies(
-      companies.map((company) => {
+      // Update companies
+      const updatedCompanies = companies.map((company) => {
         if (company.id === slot.companyId) {
           return {
             ...company,
@@ -215,12 +281,11 @@ export const useSlotOperations = (
           };
         }
         return company;
-      })
-    );
+      });
+      setCompanies(updatedCompanies);
 
-    // If the student already has this slot booked, don't duplicate it
-    setStudents(
-      students.map((student) => {
+      // Update students
+      const updatedStudents = students.map((student) => {
         if (student.id === studentId) {
           const hasBooking = student.bookedInterviews.some(
             interview => interview.id === slotId
@@ -241,16 +306,30 @@ export const useSlotOperations = (
           }
         }
         return student;
-      })
-    );
+      });
+      setStudents(updatedStudents);
+      
+      // Save all updates to localStorage
+      localStorage.setItem('slots', JSON.stringify(updatedSlots));
+      localStorage.setItem('companies', JSON.stringify(updatedCompanies));
+      localStorage.setItem('students', JSON.stringify(updatedStudents));
 
-    toast({
-      title: slot.booked ? "Interview updated" : "Interview booked",
-      description: slot.booked 
-        ? "Interview booking has been updated successfully." 
-        : "Interview slot has been booked successfully.",
-    });
-    return true;
+      toast({
+        title: slot.booked ? "Interview updated" : "Interview booked",
+        description: slot.booked 
+          ? "Interview booking has been updated successfully." 
+          : "Interview slot has been booked successfully.",
+      });
+      return true;
+    } catch (error) {
+      console.error("Error booking interview slot:", error);
+      toast({
+        title: "Error",
+        description: "Failed to book interview slot. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
   };
 
   // Get available slots for a company
