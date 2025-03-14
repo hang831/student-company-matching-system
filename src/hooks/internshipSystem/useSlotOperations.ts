@@ -78,7 +78,7 @@ export const useSlotOperations = (
     companyId: string; 
   }) => {
     try {
-      console.log("Adding timeslot with data:", { date, startTime, endTime, companyId });
+      console.log("AddTimeslot - Adding timeslot with data:", { date, startTime, endTime, companyId });
       
       // Find the company
       const company = companies.find(c => c.id === companyId);
@@ -106,9 +106,9 @@ export const useSlotOperations = (
       const normalizedStartTime = startTime.replace(':', '');
       const normalizedEndTime = endTime.replace(':', '');
       
-      // Create new slot object
+      // Create new slot object with a unique ID
       const newSlot: InterviewSlot = {
-        id: `slot-${Date.now()}`,
+        id: `slot-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
         date: slotDate,
         startTime: normalizedStartTime,
         endTime: normalizedEndTime,
@@ -117,18 +117,39 @@ export const useSlotOperations = (
         isAvailable: true,
       };
       
-      console.log("Created new slot:", newSlot);
+      console.log("AddTimeslot - Created new slot:", newSlot);
+      
+      // Get the latest company data from localStorage
+      let currentCompany = company;
+      try {
+        const savedCompanies = localStorage.getItem('companies');
+        if (savedCompanies) {
+          const parsedCompanies = JSON.parse(savedCompanies);
+          const foundCompany = parsedCompanies.find((c: Company) => c.id === companyId);
+          if (foundCompany) {
+            currentCompany = foundCompany;
+          }
+        }
+      } catch (error) {
+        console.error("AddTimeslot - Error getting company from localStorage:", error);
+      }
+      
+      // Make sure availableSlots exists
+      if (!currentCompany.availableSlots) {
+        currentCompany.availableSlots = [];
+      }
       
       // Update global slots state with immutable pattern
       const updatedSlots = [...slots, newSlot];
       setSlots(updatedSlots);
       
-      // Update company state with immutable pattern
+      // Update company state with immutable pattern, ensuring we preserve existing slots
       const updatedCompanies = companies.map((c) => {
         if (c.id === companyId) {
+          const currentSlots = c.availableSlots || [];
           return {
             ...c,
-            availableSlots: [...c.availableSlots, newSlot],
+            availableSlots: [...currentSlots, newSlot],
           };
         }
         return c;
@@ -141,8 +162,8 @@ export const useSlotOperations = (
       localStorage.setItem('slots', JSON.stringify(updatedSlots));
       localStorage.setItem('companies', JSON.stringify(updatedCompanies));
       
-      console.log("After adding timeslot - saved companies:", updatedCompanies);
-      console.log("After adding timeslot - saved slots:", updatedSlots);
+      console.log("AddTimeslot - After adding timeslot - saved companies:", updatedCompanies);
+      console.log("AddTimeslot - After adding timeslot - saved slots:", updatedSlots);
       
       toast({
         title: "Timeslot added",

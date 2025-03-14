@@ -26,11 +26,17 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
   // Synchronize with the latest company data
   useEffect(() => {
     const refreshData = () => {
+      console.log("TimeslotManager - Refreshing company data for ID:", companyId);
       const refreshedCompany = getCompanyById(companyId);
-      console.log("TimeslotManager - Company data:", refreshedCompany);
       
       if (refreshedCompany) {
-        console.log("TimeslotManager - Available slots:", refreshedCompany.availableSlots);
+        console.log("TimeslotManager - Refreshed company data:", refreshedCompany);
+        console.log("TimeslotManager - Available slots count:", refreshedCompany.availableSlots?.length || 0);
+        
+        if (refreshedCompany.availableSlots && refreshedCompany.availableSlots.length > 0) {
+          console.log("TimeslotManager - First slot:", refreshedCompany.availableSlots[0]);
+        }
+        
         setCompany(refreshedCompany);
       } else {
         console.error("TimeslotManager - Company not found:", companyId);
@@ -72,6 +78,8 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
     // Create a new date object to ensure it's passed properly
     const slotDate = new Date(date);
     
+    console.log("Adding timeslot with data:", { date: slotDate, startTime, endTime, companyId });
+    
     const success = addTimeslot({
       date: slotDate,
       startTime,
@@ -88,6 +96,8 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
       // Force refresh company data
       const refreshedCompany = getCompanyById(companyId);
       console.log("TimeslotManager - After adding, company data:", refreshedCompany);
+      console.log("TimeslotManager - After adding, available slots count:", refreshedCompany?.availableSlots?.length || 0);
+      
       if (refreshedCompany) {
         setCompany(refreshedCompany);
       }
@@ -110,6 +120,14 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
     // Add a colon before the last two digits: "0930" -> "09:30"
     return `${formattedTime.slice(0, -2)}:${formattedTime.slice(-2)}`;
   };
+
+  // Debug log for available slots
+  useEffect(() => {
+    if (company) {
+      console.log("TimeslotManager render - Company:", company.name);
+      console.log("TimeslotManager render - Available slots count:", company.availableSlots?.length || 0);
+    }
+  }, [company]);
 
   return (
     <div className="space-y-6">
@@ -181,35 +199,38 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Current Timeslots ({company.availableSlots.length})</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {company.availableSlots.map((slot: InterviewSlot) => (
-              <div 
-                key={slot.id}
-                className="flex items-center justify-between border rounded-md p-3"
-              >
-                <div>
-                  <div className="font-medium">{format(new Date(slot.date), "MMM d, yyyy")}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {formatTimeForDisplay(slot.startTime)} - {formatTimeForDisplay(slot.endTime)}
-                  </div>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => {
-                    if (removeTimeslot(slot.id)) {
-                      // Force refresh company data after removal
-                      const refreshedCompany = getCompanyById(companyId);
-                      if (refreshedCompany) {
-                        setCompany(refreshedCompany);
-                      }
-                    }
-                  }}
-                  disabled={slot.booked}
+            {company.availableSlots.map((slot: InterviewSlot) => {
+              console.log("Rendering slot:", slot);
+              return (
+                <div 
+                  key={slot.id}
+                  className="flex items-center justify-between border rounded-md p-3"
                 >
-                  <Trash className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
+                  <div>
+                    <div className="font-medium">{format(new Date(slot.date), "MMM d, yyyy")}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {formatTimeForDisplay(slot.startTime)} - {formatTimeForDisplay(slot.endTime)}
+                    </div>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      if (removeTimeslot(slot.id)) {
+                        // Force refresh company data after removal
+                        const refreshedCompany = getCompanyById(companyId);
+                        if (refreshedCompany) {
+                          setCompany(refreshedCompany);
+                        }
+                      }
+                    }}
+                    disabled={slot.booked}
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </div>
+              );
+            })}
           </div>
         </div>
       ) : (

@@ -33,22 +33,55 @@ export const useCompanyOperations = (
   // Update company details
   const updateCompany = (updatedCompany: Company) => {
     // Log before update
-    console.log("Updating company:", updatedCompany);
+    console.log("UpdateCompany - Company to update:", updatedCompany);
     
-    // Find the current company to preserve any data we don't want to overwrite
-    const currentCompany = companies.find(c => c.id === updatedCompany.id);
+    // Find the current company from localStorage directly to get the most up-to-date data
+    let currentCompany: Company | undefined;
+    
+    try {
+      const savedCompanies = localStorage.getItem('companies');
+      if (savedCompanies) {
+        const parsedCompanies = JSON.parse(savedCompanies);
+        currentCompany = parsedCompanies.find((c: Company) => c.id === updatedCompany.id);
+      }
+    } catch (error) {
+      console.error("Error reading from localStorage:", error);
+    }
+    
+    // If not found in localStorage, fall back to the companies array
+    if (!currentCompany) {
+      currentCompany = companies.find(c => c.id === updatedCompany.id);
+    }
     
     if (!currentCompany) {
-      console.error("Company not found:", updatedCompany.id);
+      console.error("UpdateCompany - Company not found:", updatedCompany.id);
+      toast({
+        title: "Error",
+        description: "Company not found. Cannot update.",
+        variant: "destructive",
+      });
       return updatedCompany;
     }
     
-    // IMPORTANT: Preserve the availableSlots from the current company
-    // This ensures we don't lose the timeslot data during updates
+    // Make sure we preserve the existing timeslots/availableSlots
+    // Ensure we're using the most up-to-date availableSlots
+    console.log("UpdateCompany - Current company availableSlots:", currentCompany.availableSlots?.length || 0);
+    console.log("UpdateCompany - Updated company availableSlots:", updatedCompany.availableSlots?.length || 0);
+    
+    // Use the slots from updatedCompany if they exist, otherwise use the current company's slots
+    const slotsToKeep = 
+      (updatedCompany.availableSlots && updatedCompany.availableSlots.length > 0) 
+        ? updatedCompany.availableSlots 
+        : (currentCompany.availableSlots || []);
+    
+    // Create the merged company with preserved data
     const mergedCompany = {
       ...updatedCompany,
-      availableSlots: currentCompany.availableSlots || []
+      availableSlots: slotsToKeep
     };
+    
+    console.log("UpdateCompany - Merged company with preserved slots:", mergedCompany);
+    console.log("UpdateCompany - Preserved availableSlots count:", mergedCompany.availableSlots.length);
     
     // Update the companies array
     const updatedCompanies = companies.map((company) =>
@@ -60,7 +93,7 @@ export const useCompanyOperations = (
     
     // Immediately save to localStorage to ensure persistence
     localStorage.setItem('companies', JSON.stringify(updatedCompanies));
-    console.log("After update, saved companies:", updatedCompanies);
+    console.log("UpdateCompany - Saved to localStorage, companies count:", updatedCompanies.length);
     
     toast({
       title: "Company updated",

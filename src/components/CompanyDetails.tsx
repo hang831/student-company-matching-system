@@ -24,18 +24,16 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
   const [activeTab, setActiveTab] = useState("details");
   
   useEffect(() => {
+    console.log("CompanyDetails - Loading latest company data for ID:", company.id);
     const refreshedCompany = getCompanyById(company.id);
+    
     if (refreshedCompany) {
-      console.log("CompanyDetails - Refreshed company on tab change:", refreshedCompany);
+      console.log("CompanyDetails - Refreshed company data:", refreshedCompany);
+      console.log("CompanyDetails - Available slots:", refreshedCompany.availableSlots?.length || 0);
       
-      if (activeTab === "details") {
-        setEditedCompany(prev => ({
-          ...prev,
-          availableSlots: refreshedCompany.availableSlots || []
-        }));
-      } else {
-        setEditedCompany(refreshedCompany);
-      }
+      setEditedCompany(refreshedCompany);
+    } else {
+      console.error("CompanyDetails - Failed to get refreshed company data");
     }
   }, [company.id, getCompanyById, activeTab]);
 
@@ -58,11 +56,27 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
     try {
       const currentCompany = getCompanyById(company.id);
       
+      if (!currentCompany) {
+        console.error("HandleSave - Company not found:", company.id);
+        toast({
+          title: "Error",
+          description: "Company not found. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      console.log("HandleSave - Current company from storage:", currentCompany);
+      console.log("HandleSave - Edited company before merge:", editedCompany);
+      
       const companyToUpdate = {
         ...editedCompany,
-        availableSlots: currentCompany?.availableSlots || editedCompany.availableSlots || []
+        availableSlots: currentCompany.availableSlots || []
       };
-
+      
+      console.log("HandleSave - Final company to update:", companyToUpdate);
+      console.log("HandleSave - availableSlots count:", companyToUpdate.availableSlots.length);
+      
       updateCompany(companyToUpdate);
       
       toast({
