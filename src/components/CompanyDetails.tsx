@@ -21,45 +21,22 @@ interface CompanyDetailsProps {
 
 const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
   const { updateCompany, getStudentById, toggleSlotAvailability, getCompanyById, refresh } = useInternshipSystem();
-  const [editedCompany, setEditedCompany] = useState<Company>(() => {
-    // Create a deep copy of the company object
-    return JSON.parse(JSON.stringify(company));
-  });
+  const [editedCompany, setEditedCompany] = useState<Company>({...company});
   const [activeTab, setActiveTab] = useState("details");
   
-  // Refresh company data whenever it changes or tab changes
+  // Refresh company data whenever tab changes
   useEffect(() => {
-    // Initial full refresh when component mounts
-    const refreshedCompany = getCompanyById(company.id);
-    if (refreshedCompany) {
-      setEditedCompany(JSON.parse(JSON.stringify(refreshedCompany)));
-    }
-    
-    const refreshData = () => {
-      const refreshedCompany = getCompanyById(company.id);
-      if (refreshedCompany) {
-        // Always do a full refresh to show latest data
-        setEditedCompany(JSON.parse(JSON.stringify(refreshedCompany)));
-      }
-    };
-    
-    // Set up a small interval to refresh data periodically
-    const intervalId = setInterval(refreshData, 1000);
-    
-    return () => clearInterval(intervalId);
-  }, [company.id, getCompanyById, activeTab]);
-
-  // Force refresh when tab changes
-  useEffect(() => {
-    // Force a refresh when tab changes
+    // Initial full refresh when component mounts or tab changes
     refresh();
-    
-    // Get latest company data
     const refreshedCompany = getCompanyById(company.id);
     if (refreshedCompany) {
-      setEditedCompany(JSON.parse(JSON.stringify(refreshedCompany)));
+      // Only update the availableSlots part to preserve form edits
+      setEditedCompany(prev => ({
+        ...prev,
+        availableSlots: refreshedCompany.availableSlots || []
+      }));
     }
-  }, [activeTab, company.id, getCompanyById, refresh]);
+  }, [company.id, getCompanyById, activeTab, refresh]);
 
   // Format time for display (convert "1930" to "19:30")
   const formatTimeForDisplay = (time: string) => {
@@ -82,29 +59,24 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
 
   const handleSave = useCallback(() => {
     try {
-      // Make a full deep copy of the edited company with all form changes
-      const companyToUpdate = JSON.parse(JSON.stringify(editedCompany));
-      
-      // Get the latest availableSlots data directly from the source
-      const latestCompany = getCompanyById(company.id);
-      if (latestCompany) {
-        companyToUpdate.availableSlots = JSON.parse(JSON.stringify(latestCompany.availableSlots));
-      }
-      
-      // Call the update function with our updated company object
+      // Create a copy of the edited company data to update
+      const companyToUpdate = {
+        ...editedCompany,
+        // Ensure we have the latest availableSlots
+        availableSlots: getCompanyById(company.id)?.availableSlots || editedCompany.availableSlots || []
+      };
+
+      // Call the update function
       updateCompany(companyToUpdate);
-      
-      // Force a refresh to ensure data is updated
-      refresh();
       
       toast({
         title: "Company Updated",
         description: "Company information has been saved successfully.",
       });
       
-      // Close the dialog after saving
+      // Give time for data to be saved before closing
       setTimeout(() => {
-        refresh(); // Refresh one more time before closing
+        refresh();
         onClose();
       }, 500);
     } catch (error) {
@@ -123,7 +95,10 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
       refresh();
       const refreshedCompany = getCompanyById(company.id);
       if (refreshedCompany) {
-        setEditedCompany(JSON.parse(JSON.stringify(refreshedCompany)));
+        setEditedCompany(prev => ({
+          ...prev,
+          availableSlots: refreshedCompany.availableSlots || []
+        }));
       }
     }
   }, [toggleSlotAvailability, company.id, getCompanyById, refresh]);
@@ -223,19 +198,19 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
           </TabsContent>
           
           <TabsContent value="interviews">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Time</TableHead>
-                  <TableHead>Available</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Student</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {editedCompany.availableSlots && editedCompany.availableSlots.length > 0 ? (
-                  editedCompany.availableSlots.map((slot) => {
+            {editedCompany.availableSlots && editedCompany.availableSlots.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Time</TableHead>
+                    <TableHead>Available</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Student</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {editedCompany.availableSlots.map((slot) => {
                     const student = slot.studentId ? getStudentById(slot.studentId) : null;
                     
                     return (
@@ -266,16 +241,14 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
                         <TableCell>{student?.name || "-"}</TableCell>
                       </TableRow>
                     );
-                  })
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-4">
-                      No interview slots available
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  })}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-4 text-muted-foreground">
+                No interview slots available.
+              </div>
+            )}
           </TabsContent>
         </Tabs>
         

@@ -17,7 +17,13 @@ export const useCompanyOperations = (
       id: `c${Date.now()}`, // Use timestamp for unique IDs
       availableSlots: [],
     };
-    setCompanies([...companies, newCompany]);
+    
+    const updatedCompanies = [...companies, newCompany];
+    setCompanies(updatedCompanies);
+    
+    // Save immediately to localStorage
+    localStorage.setItem('companies', JSON.stringify(updatedCompanies));
+    
     toast({
       title: "Company added",
       description: `${company.name} has been added successfully.`,
@@ -26,12 +32,25 @@ export const useCompanyOperations = (
 
   // Update company details
   const updateCompany = (updatedCompany: Company) => {
-    // Create a deep copy to avoid reference issues
-    const updatedCompanyCopy = JSON.parse(JSON.stringify(updatedCompany));
+    // Log before update
+    console.log("Updating company:", updatedCompany);
+    
+    // Ensure availableSlots is never undefined
+    if (!updatedCompany.availableSlots) {
+      updatedCompany.availableSlots = [];
+    }
+    
+    // Find the current company to preserve any data we don't want to overwrite
+    const currentCompany = companies.find(c => c.id === updatedCompany.id);
+    
+    // If we found the current company, ensure we don't lose availableSlots data
+    if (currentCompany && (!updatedCompany.availableSlots || updatedCompany.availableSlots.length === 0)) {
+      updatedCompany.availableSlots = currentCompany.availableSlots;
+    }
     
     // Update the companies array
     const updatedCompanies = companies.map((company) =>
-      company.id === updatedCompanyCopy.id ? updatedCompanyCopy : company
+      company.id === updatedCompany.id ? updatedCompany : company
     );
     
     // Set the new companies array
@@ -39,14 +58,15 @@ export const useCompanyOperations = (
     
     // Immediately save to localStorage to ensure persistence
     localStorage.setItem('companies', JSON.stringify(updatedCompanies));
+    console.log("After update, saved companies:", updatedCompanies);
     
     toast({
       title: "Company updated",
-      description: `${updatedCompanyCopy.name} has been updated successfully.`,
+      description: `${updatedCompany.name} has been updated successfully.`,
     });
     
     // Return the updated company for immediate use if needed
-    return updatedCompanyCopy;
+    return updatedCompany;
   };
 
   // Delete company
@@ -55,23 +75,29 @@ export const useCompanyOperations = (
     const companySlotIds = slots.filter(slot => slot.companyId === companyId).map(slot => slot.id);
     
     // Update bookings for any students who had booked with this company
-    setStudents(
-      students.map(student => ({
-        ...student,
-        bookedInterviews: student.bookedInterviews.filter(
-          interview => !companySlotIds.includes(interview.id)
-        ),
-        preferences: student.preferences.filter(
-          pref => pref.companyId !== companyId
-        )
-      }))
-    );
+    const updatedStudents = students.map(student => ({
+      ...student,
+      bookedInterviews: student.bookedInterviews.filter(
+        interview => !companySlotIds.includes(interview.id)
+      ),
+      preferences: student.preferences.filter(
+        pref => pref.companyId !== companyId
+      )
+    }));
+    setStudents(updatedStudents);
     
     // Remove slots associated with this company
-    setSlots(slots.filter(slot => slot.companyId !== companyId));
+    const updatedSlots = slots.filter(slot => slot.companyId !== companyId);
+    setSlots(updatedSlots);
     
     // Remove the company itself
-    setCompanies(companies.filter(company => company.id !== companyId));
+    const updatedCompanies = companies.filter(company => company.id !== companyId);
+    setCompanies(updatedCompanies);
+    
+    // Save all changes to localStorage
+    localStorage.setItem('students', JSON.stringify(updatedStudents));
+    localStorage.setItem('slots', JSON.stringify(updatedSlots));
+    localStorage.setItem('companies', JSON.stringify(updatedCompanies));
     
     toast({
       title: "Company deleted",

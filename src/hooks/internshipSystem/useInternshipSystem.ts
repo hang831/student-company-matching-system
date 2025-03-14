@@ -149,9 +149,35 @@ export const useInternshipSystem = () => {
     return students.find((student) => student.id === studentId);
   }, [students]);
 
-  // Get company by ID - updated to always get fresh data from state
+  // Get company by ID - updated to always get latest data
   const getCompanyById = useCallback((companyId: string) => {
-    return companies.find((company) => company.id === companyId);
+    // First check the companies from state
+    const companyFromState = companies.find((company) => company.id === companyId);
+    
+    // If we don't find it, try to get it from localStorage directly
+    if (!companyFromState) {
+      try {
+        const savedCompanies = localStorage.getItem('companies');
+        if (savedCompanies) {
+          const parsedCompanies = JSON.parse(savedCompanies);
+          const company = parsedCompanies.find((c: Company) => c.id === companyId);
+          if (company) {
+            // Convert dates for slots
+            return {
+              ...company,
+              availableSlots: company.availableSlots?.map((slot: InterviewSlot) => ({
+                ...slot,
+                date: new Date(slot.date)
+              })) || []
+            };
+          }
+        }
+      } catch (error) {
+        console.error("Error getting company from localStorage:", error);
+      }
+    }
+    
+    return companyFromState;
   }, [companies]);
 
   // Utility hooks that contain the actual implementation

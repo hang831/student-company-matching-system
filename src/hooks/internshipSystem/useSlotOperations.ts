@@ -33,23 +33,27 @@ export const useSlotOperations = (
 
     const updatedSlot = { ...slot, isAvailable: !slot.isAvailable };
     
-    setSlots(
-      slots.map((s) => (s.id === slotId ? updatedSlot : s))
-    );
+    // Update global slots
+    const updatedSlots = slots.map((s) => (s.id === slotId ? updatedSlot : s));
+    setSlots(updatedSlots);
 
-    setCompanies(
-      companies.map((company) => {
-        if (company.id === slot.companyId) {
-          return {
-            ...company,
-            availableSlots: company.availableSlots.map((s) =>
-              s.id === slotId ? updatedSlot : s
-            ),
-          };
-        }
-        return company;
-      })
-    );
+    // Update company availableSlots
+    const updatedCompanies = companies.map((company) => {
+      if (company.id === slot.companyId) {
+        return {
+          ...company,
+          availableSlots: company.availableSlots.map((s) =>
+            s.id === slotId ? updatedSlot : s
+          ),
+        };
+      }
+      return company;
+    });
+    setCompanies(updatedCompanies);
+
+    // Save to localStorage immediately
+    localStorage.setItem('slots', JSON.stringify(updatedSlots));
+    localStorage.setItem('companies', JSON.stringify(updatedCompanies));
 
     toast({
       title: updatedSlot.isAvailable ? "Slot Activated" : "Slot Deactivated",
@@ -74,6 +78,8 @@ export const useSlotOperations = (
     companyId: string; 
   }) => {
     try {
+      console.log("Adding timeslot with data:", { date, startTime, endTime, companyId });
+      
       // Find the company
       const company = companies.find(c => c.id === companyId);
       if (!company) {
@@ -111,6 +117,8 @@ export const useSlotOperations = (
         isAvailable: true,
       };
       
+      console.log("Created new slot:", newSlot);
+      
       // Update global slots state with immutable pattern
       const updatedSlots = [...slots, newSlot];
       setSlots(updatedSlots);
@@ -133,13 +141,13 @@ export const useSlotOperations = (
       localStorage.setItem('slots', JSON.stringify(updatedSlots));
       localStorage.setItem('companies', JSON.stringify(updatedCompanies));
       
+      console.log("After adding timeslot - saved companies:", updatedCompanies);
+      console.log("After adding timeslot - saved slots:", updatedSlots);
+      
       toast({
         title: "Timeslot added",
         description: "A new interview timeslot has been added.",
       });
-      
-      console.log("Saved companies to localStorage:", updatedCompanies);
-      console.log("Saved slots to localStorage:", updatedSlots);
       
       return true;
     } catch (error) {
@@ -153,7 +161,7 @@ export const useSlotOperations = (
     }
   };
   
-  // Remove timeslot - modified to allow removal of booked slots
+  // Remove timeslot - allows removal of booked slots
   const removeTimeslot = (slotId: string) => {
     try {
       const slot = slots.find((s) => s.id === slotId);

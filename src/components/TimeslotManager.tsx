@@ -23,19 +23,20 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
   const [endTime, setEndTime] = useState<string>("");
   const [company, setCompany] = useState(getCompanyById(companyId));
   
-  // Force refresh on initial load and every 2 seconds
+  // Force refresh on initial load and whenever localstorage might have changed
   useEffect(() => {
-    // Initial refresh
-    refresh();
-    const refreshedCompany = getCompanyById(companyId);
-    setCompany(refreshedCompany);
-    
-    // Set up periodic refresh
-    const intervalId = setInterval(() => {
+    const refreshData = () => {
       refresh();
       const refreshedCompany = getCompanyById(companyId);
+      console.log("TimeslotManager - Refreshed company data:", refreshedCompany);
       setCompany(refreshedCompany);
-    }, 2000);
+    };
+    
+    // Initial refresh
+    refreshData();
+    
+    // Set up periodic refresh
+    const intervalId = setInterval(refreshData, 2000);
     
     return () => clearInterval(intervalId);
   }, [companyId, getCompanyById, refresh]);
@@ -80,6 +81,7 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
       // Force refresh data
       refresh();
       const refreshedCompany = getCompanyById(companyId);
+      console.log("TimeslotManager - After adding, refreshed company:", refreshedCompany);
       setCompany(refreshedCompany);
       
       toast({
