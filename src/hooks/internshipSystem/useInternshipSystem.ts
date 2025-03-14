@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { Company, Student, InterviewSlot } from "@/types";
 import { mockCompanies, mockStudents, interviewSlots } from "@/data/mockData";
@@ -113,6 +114,7 @@ export const useInternshipSystem = () => {
       
       if (savedSlots) {
         console.log("Found saved slots:", JSON.parse(savedSlots));
+        const parsedSlots = JSON.parse(savedSlots);
         // Ensure dates are properly converted back to Date objects
         setSlots(parsedSlots.map((slot: InterviewSlot) => ({
           ...slot,
@@ -122,6 +124,7 @@ export const useInternshipSystem = () => {
       
       if (savedStudents) {
         console.log("Found saved students:", JSON.parse(savedStudents));
+        const parsedStudents = JSON.parse(savedStudents);
         // Ensure dates are properly converted back to Date objects
         setStudents(parsedStudents.map((student: Student) => ({
           ...student,
