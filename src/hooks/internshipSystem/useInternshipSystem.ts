@@ -77,6 +77,9 @@ export const useInternshipSystem = () => {
       localStorage.setItem('companies', JSON.stringify(companies));
       localStorage.setItem('students', JSON.stringify(students));
       localStorage.setItem('slots', JSON.stringify(slots));
+      
+      console.log("UseEffect: Saved to localStorage - companies:", companies);
+      console.log("UseEffect: Saved to localStorage - slots:", slots);
     } catch (error) {
       console.error("Error saving data to localStorage:", error);
       toast({
@@ -95,8 +98,11 @@ export const useInternshipSystem = () => {
       const savedStudents = localStorage.getItem('students');
       const savedSlots = localStorage.getItem('slots');
       
+      console.log("Refresh function called - reading from localStorage");
+      
       if (savedCompanies) {
         const parsedCompanies = JSON.parse(savedCompanies);
+        console.log("Found saved companies:", parsedCompanies);
         // Ensure dates are properly converted back to Date objects
         setCompanies(parsedCompanies.map((company: Company) => ({
           ...company,
@@ -121,6 +127,7 @@ export const useInternshipSystem = () => {
       
       if (savedSlots) {
         const parsedSlots = JSON.parse(savedSlots);
+        console.log("Found saved slots:", parsedSlots);
         // Ensure dates are properly converted back to Date objects
         setSlots(parsedSlots.map((slot: InterviewSlot) => ({
           ...slot,

@@ -20,14 +20,14 @@ interface CompanyDetailsProps {
 }
 
 const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
-  const { updateCompany, getStudentById, toggleSlotAvailability, getCompanyById } = useInternshipSystem();
+  const { updateCompany, getStudentById, toggleSlotAvailability, getCompanyById, refresh } = useInternshipSystem();
   const [editedCompany, setEditedCompany] = useState<Company>(() => {
     // Create a deep copy of the company object
     return JSON.parse(JSON.stringify(company));
   });
   const [activeTab, setActiveTab] = useState("details");
   
-  // Refresh company data whenever it changes
+  // Refresh company data whenever it changes or tab changes
   useEffect(() => {
     const refreshData = () => {
       const refreshedCompany = getCompanyById(company.id);
@@ -48,7 +48,19 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
     const intervalId = setInterval(refreshData, 1000);
     
     return () => clearInterval(intervalId);
-  }, [company.id, getCompanyById]);
+  }, [company.id, getCompanyById, activeTab]);
+
+  // Format time for display (convert "1930" to "19:30")
+  const formatTimeForDisplay = (time: string) => {
+    // If the time contains a colon already, return it as is
+    if (time.includes(':')) return time;
+    
+    // For 3-digit format like "930", add a leading 0 to make "0930"
+    let formattedTime = time.length === 3 ? `0${time}` : time;
+    
+    // Add a colon before the last two digits: "0930" -> "09:30"
+    return `${formattedTime.slice(0, -2)}:${formattedTime.slice(-2)}`;
+  };
 
   const handleInputChange = (field: keyof Company, value: string | number) => {
     setEditedCompany(prev => ({
@@ -71,6 +83,9 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
       // Call the update function with our updated company object
       updateCompany(companyToUpdate);
       
+      // Force a refresh to ensure data is updated
+      refresh();
+      
       toast({
         title: "Company Updated",
         description: "Company information has been saved successfully.",
@@ -79,8 +94,9 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
       // Close the dialog after saving
       // Use a slight delay to ensure the update has propagated to the data store
       setTimeout(() => {
+        refresh(); // Refresh one more time before closing
         onClose();
-      }, 100);
+      }, 300);
     } catch (error) {
       console.error("Error saving company details:", error);
       toast({
@@ -89,7 +105,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
         variant: "destructive",
       });
     }
-  }, [editedCompany, company.id, getCompanyById, updateCompany, onClose]);
+  }, [editedCompany, company.id, getCompanyById, updateCompany, onClose, refresh]);
 
   const handleToggleAvailability = useCallback((slotId: string) => {
     if (toggleSlotAvailability(slotId)) {
@@ -221,7 +237,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
                       <TableCell>{format(new Date(slot.date), "MMM d, yyyy")}</TableCell>
                       <TableCell className="flex items-center">
                         <Clock className="h-4 w-4 mr-2" />
-                        {slot.startTime} - {slot.endTime}
+                        {formatTimeForDisplay(slot.startTime)} - {formatTimeForDisplay(slot.endTime)}
                       </TableCell>
                       <TableCell>
                         <Switch

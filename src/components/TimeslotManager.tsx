@@ -47,12 +47,12 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
       return;
     }
     
-    // Validate time format (HH:MM)
-    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    // Validate time format (just numerical digits, 3 or 4 characters)
+    const timeRegex = /^\d{3,4}$/;
     if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
       toast({
         title: "Invalid Time Format",
-        description: "Please use the HH:MM format (e.g., 09:30).",
+        description: "Please use time format like '1930' for 7:30 PM.",
         variant: "destructive"
       });
       return;
@@ -77,6 +77,18 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
       // Force refresh company data
       setCompany(getCompanyById(companyId));
     }
+  };
+
+  // Format time for display (convert "1930" to "19:30")
+  const formatTimeForDisplay = (time: string) => {
+    // If the time contains a colon already, return it as is
+    if (time.includes(':')) return time;
+    
+    // For 3-digit format like "930", add a leading 0 to make "0930"
+    let formattedTime = time.length === 3 ? `0${time}` : time;
+    
+    // Add a colon before the last two digits: "0930" -> "09:30"
+    return `${formattedTime.slice(0, -2)}:${formattedTime.slice(-2)}`;
   };
 
   return (
@@ -117,11 +129,12 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
               <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="startTime"
-                placeholder="HH:MM"
+                placeholder="1930"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
               />
             </div>
+            <p className="text-xs text-muted-foreground">Use format: 1930 (for 7:30 PM)</p>
           </div>
           
           <div className="space-y-2">
@@ -130,11 +143,12 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
               <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="endTime"
-                placeholder="HH:MM"
+                placeholder="2000"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
               />
             </div>
+            <p className="text-xs text-muted-foreground">Use format: 2000 (for 8:00 PM)</p>
           </div>
         </div>
         
@@ -155,7 +169,7 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
                 <div>
                   <div className="font-medium">{format(new Date(slot.date), "MMM d, yyyy")}</div>
                   <div className="text-sm text-muted-foreground">
-                    {slot.startTime} - {slot.endTime}
+                    {formatTimeForDisplay(slot.startTime)} - {formatTimeForDisplay(slot.endTime)}
                   </div>
                 </div>
                 <Button 

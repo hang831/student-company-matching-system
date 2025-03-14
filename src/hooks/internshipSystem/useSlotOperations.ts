@@ -96,12 +96,16 @@ export const useSlotOperations = (
         return false;
       }
       
+      // Normalize time format (remove any colon if present)
+      const normalizedStartTime = startTime.replace(':', '');
+      const normalizedEndTime = endTime.replace(':', '');
+      
       // Create new slot object
       const newSlot: InterviewSlot = {
-        id: `slot-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        id: `slot-${Date.now()}`,
         date: slotDate,
-        startTime,
-        endTime,
+        startTime: normalizedStartTime,
+        endTime: normalizedEndTime,
         companyId,
         booked: false,
         isAvailable: true,
@@ -112,14 +116,14 @@ export const useSlotOperations = (
       setSlots(updatedSlots);
       
       // Update company state with immutable pattern
-      const updatedCompanies = companies.map((company) => {
-        if (company.id === companyId) {
+      const updatedCompanies = companies.map((c) => {
+        if (c.id === companyId) {
           return {
-            ...company,
-            availableSlots: [...company.availableSlots, newSlot],
+            ...c,
+            availableSlots: [...c.availableSlots, newSlot],
           };
         }
-        return company;
+        return c;
       });
       
       // Set the updated companies state
@@ -133,6 +137,9 @@ export const useSlotOperations = (
         title: "Timeslot added",
         description: "A new interview timeslot has been added.",
       });
+      
+      console.log("Saved companies to localStorage:", updatedCompanies);
+      console.log("Saved slots to localStorage:", updatedSlots);
       
       return true;
     } catch (error) {
