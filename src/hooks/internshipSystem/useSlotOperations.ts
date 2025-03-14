@@ -153,7 +153,7 @@ export const useSlotOperations = (
     }
   };
   
-  // Remove timeslot
+  // Remove timeslot - modified to allow removal of booked slots
   const removeTimeslot = (slotId: string) => {
     try {
       const slot = slots.find((s) => s.id === slotId);
@@ -167,18 +167,8 @@ export const useSlotOperations = (
         return false;
       }
       
-      // Prevent removing booked slots
-      if (slot.booked) {
-        toast({
-          title: "Cannot Remove",
-          description: "This slot is already booked and cannot be removed.",
-          variant: "destructive",
-        });
-        return false;
-      }
-      
-      // Remove from student booked interviews if it was booked
-      if (slot.studentId) {
+      // If slot is booked, remove it from student's booked interviews
+      if (slot.booked && slot.studentId) {
         const updatedStudents = students.map(student => {
           if (student.id === slot.studentId) {
             return {
@@ -216,8 +206,10 @@ export const useSlotOperations = (
       localStorage.setItem('companies', JSON.stringify(updatedCompanies));
       
       toast({
-        title: "Timeslot removed",
-        description: "The interview timeslot has been removed.",
+        title: slot.booked ? "Booked slot removed" : "Timeslot removed",
+        description: slot.booked 
+          ? "The booked interview slot has been removed and student notified." 
+          : "The interview timeslot has been removed.",
       });
       
       return true;

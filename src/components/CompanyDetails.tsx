@@ -32,14 +32,19 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
     const refreshData = () => {
       const refreshedCompany = getCompanyById(company.id);
       if (refreshedCompany) {
-        // Only update slots data to preserve form edits
-        setEditedCompany(prevCompany => {
-          // Create a deep copy of the previous state to avoid mutation
-          const updatedCompany = JSON.parse(JSON.stringify(prevCompany));
-          // Only update availableSlots to preserve edits in details tab
-          updatedCompany.availableSlots = JSON.parse(JSON.stringify(refreshedCompany.availableSlots));
-          return updatedCompany;
-        });
+        // When on Timeslots or Interviews tab, do a full refresh to show latest data
+        if (activeTab === "timeslots" || activeTab === "interviews") {
+          setEditedCompany(JSON.parse(JSON.stringify(refreshedCompany)));
+        } else {
+          // For details tab, only update slots data to preserve form edits
+          setEditedCompany(prevCompany => {
+            // Create a deep copy of the previous state to avoid mutation
+            const updatedCompany = JSON.parse(JSON.stringify(prevCompany));
+            // Only update availableSlots to preserve edits in details tab
+            updatedCompany.availableSlots = JSON.parse(JSON.stringify(refreshedCompany.availableSlots));
+            return updatedCompany;
+          });
+        }
       }
     };
     
