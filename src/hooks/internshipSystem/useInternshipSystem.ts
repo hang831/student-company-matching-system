@@ -77,9 +77,6 @@ export const useInternshipSystem = () => {
       localStorage.setItem('companies', JSON.stringify(companies));
       localStorage.setItem('students', JSON.stringify(students));
       localStorage.setItem('slots', JSON.stringify(slots));
-      
-      console.log("UseEffect: Saved to localStorage - companies:", companies);
-      console.log("UseEffect: Saved to localStorage - slots:", slots);
     } catch (error) {
       console.error("Error saving data to localStorage:", error);
       toast({
@@ -98,11 +95,8 @@ export const useInternshipSystem = () => {
       const savedStudents = localStorage.getItem('students');
       const savedSlots = localStorage.getItem('slots');
       
-      console.log("Refresh function called - reading from localStorage");
-      
       if (savedCompanies) {
         const parsedCompanies = JSON.parse(savedCompanies);
-        console.log("Found saved companies:", parsedCompanies);
         // Ensure dates are properly converted back to Date objects
         setCompanies(parsedCompanies.map((company: Company) => ({
           ...company,
@@ -127,7 +121,6 @@ export const useInternshipSystem = () => {
       
       if (savedSlots) {
         const parsedSlots = JSON.parse(savedSlots);
-        console.log("Found saved slots:", parsedSlots);
         // Ensure dates are properly converted back to Date objects
         setSlots(parsedSlots.map((slot: InterviewSlot) => ({
           ...slot,
@@ -149,32 +142,42 @@ export const useInternshipSystem = () => {
     return students.find((student) => student.id === studentId);
   }, [students]);
 
-  // Get company by ID - updated to always get latest data
+  // Get company by ID - improved to always get fresh data
   const getCompanyById = useCallback((companyId: string) => {
-    // First check the companies from state
+    // First try to get the company from localStorage directly
+    try {
+      const savedCompanies = localStorage.getItem('companies');
+      if (savedCompanies) {
+        const parsedCompanies = JSON.parse(savedCompanies);
+        const company = parsedCompanies.find((c: Company) => c.id === companyId);
+        
+        if (company) {
+          // Convert dates for slots and ensure availableSlots is defined
+          return {
+            ...company,
+            availableSlots: (company.availableSlots || []).map((slot: any) => ({
+              ...slot,
+              date: new Date(slot.date)
+            }))
+          };
+        }
+      }
+    } catch (error) {
+      console.error("Error getting company from localStorage:", error);
+    }
+    
+    // Fallback to companies from state if not found in localStorage
     const companyFromState = companies.find((company) => company.id === companyId);
     
-    // If we don't find it, try to get it from localStorage directly
-    if (!companyFromState) {
-      try {
-        const savedCompanies = localStorage.getItem('companies');
-        if (savedCompanies) {
-          const parsedCompanies = JSON.parse(savedCompanies);
-          const company = parsedCompanies.find((c: Company) => c.id === companyId);
-          if (company) {
-            // Convert dates for slots
-            return {
-              ...company,
-              availableSlots: company.availableSlots?.map((slot: InterviewSlot) => ({
-                ...slot,
-                date: new Date(slot.date)
-              })) || []
-            };
-          }
-        }
-      } catch (error) {
-        console.error("Error getting company from localStorage:", error);
-      }
+    if (companyFromState) {
+      // Ensure availableSlots is defined and dates are proper Date objects
+      return {
+        ...companyFromState,
+        availableSlots: (companyFromState.availableSlots || []).map(slot => ({
+          ...slot,
+          date: slot.date instanceof Date ? slot.date : new Date(slot.date)
+        }))
+      };
     }
     
     return companyFromState;

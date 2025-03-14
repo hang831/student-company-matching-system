@@ -23,23 +23,30 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
   const [endTime, setEndTime] = useState<string>("");
   const [company, setCompany] = useState(getCompanyById(companyId));
   
-  // Force refresh on initial load and whenever localstorage might have changed
+  // Synchronize with the latest company data
   useEffect(() => {
     const refreshData = () => {
-      refresh();
       const refreshedCompany = getCompanyById(companyId);
-      console.log("TimeslotManager - Refreshed company data:", refreshedCompany);
-      setCompany(refreshedCompany);
+      console.log("TimeslotManager - Company data:", refreshedCompany);
+      
+      if (refreshedCompany) {
+        console.log("TimeslotManager - Available slots:", refreshedCompany.availableSlots);
+        setCompany(refreshedCompany);
+      } else {
+        console.error("TimeslotManager - Company not found:", companyId);
+      }
     };
     
     // Initial refresh
     refreshData();
     
-    // Set up periodic refresh
-    const intervalId = setInterval(refreshData, 2000);
+    // Set up refresh listener
+    window.addEventListener('storage', refreshData);
     
-    return () => clearInterval(intervalId);
-  }, [companyId, getCompanyById, refresh]);
+    return () => {
+      window.removeEventListener('storage', refreshData);
+    };
+  }, [companyId, getCompanyById]);
   
   const handleAddTimeslot = () => {
     if (!date || !startTime || !endTime) {
@@ -78,11 +85,12 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
       setStartTime("");
       setEndTime("");
       
-      // Force refresh data
-      refresh();
+      // Force refresh company data
       const refreshedCompany = getCompanyById(companyId);
-      console.log("TimeslotManager - After adding, refreshed company:", refreshedCompany);
-      setCompany(refreshedCompany);
+      console.log("TimeslotManager - After adding, company data:", refreshedCompany);
+      if (refreshedCompany) {
+        setCompany(refreshedCompany);
+      }
       
       toast({
         title: "Timeslot Added",
@@ -171,7 +179,7 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
       
       {company && company.availableSlots && company.availableSlots.length > 0 ? (
         <div className="space-y-4">
-          <h3 className="text-lg font-medium">Current Timeslots</h3>
+          <h3 className="text-lg font-medium">Current Timeslots ({company.availableSlots.length})</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {company.availableSlots.map((slot: InterviewSlot) => (
               <div 
@@ -190,8 +198,10 @@ const TimeslotManager = ({ companyId }: TimeslotManagerProps) => {
                   onClick={() => {
                     if (removeTimeslot(slot.id)) {
                       // Force refresh company data after removal
-                      refresh();
-                      setCompany(getCompanyById(companyId));
+                      const refreshedCompany = getCompanyById(companyId);
+                      if (refreshedCompany) {
+                        setCompany(refreshedCompany);
+                      }
                     }
                   }}
                   disabled={slot.booked}

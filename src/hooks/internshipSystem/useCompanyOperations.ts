@@ -35,22 +35,24 @@ export const useCompanyOperations = (
     // Log before update
     console.log("Updating company:", updatedCompany);
     
-    // Ensure availableSlots is never undefined
-    if (!updatedCompany.availableSlots) {
-      updatedCompany.availableSlots = [];
-    }
-    
     // Find the current company to preserve any data we don't want to overwrite
     const currentCompany = companies.find(c => c.id === updatedCompany.id);
     
-    // If we found the current company, ensure we don't lose availableSlots data
-    if (currentCompany && (!updatedCompany.availableSlots || updatedCompany.availableSlots.length === 0)) {
-      updatedCompany.availableSlots = currentCompany.availableSlots;
+    if (!currentCompany) {
+      console.error("Company not found:", updatedCompany.id);
+      return updatedCompany;
     }
+    
+    // IMPORTANT: Preserve the availableSlots from the current company
+    // This ensures we don't lose the timeslot data during updates
+    const mergedCompany = {
+      ...updatedCompany,
+      availableSlots: currentCompany.availableSlots || []
+    };
     
     // Update the companies array
     const updatedCompanies = companies.map((company) =>
-      company.id === updatedCompany.id ? updatedCompany : company
+      company.id === mergedCompany.id ? mergedCompany : company
     );
     
     // Set the new companies array
@@ -62,11 +64,11 @@ export const useCompanyOperations = (
     
     toast({
       title: "Company updated",
-      description: `${updatedCompany.name} has been updated successfully.`,
+      description: `${mergedCompany.name} has been updated successfully.`,
     });
     
     // Return the updated company for immediate use if needed
-    return updatedCompany;
+    return mergedCompany;
   };
 
   // Delete company

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useInternshipSystem } from "@/hooks/useInternshipSystem";
 import { format } from "date-fns";
@@ -20,33 +19,31 @@ interface CompanyDetailsProps {
 }
 
 const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
-  const { updateCompany, getStudentById, toggleSlotAvailability, getCompanyById, refresh } = useInternshipSystem();
+  const { updateCompany, getStudentById, toggleSlotAvailability, getCompanyById } = useInternshipSystem();
   const [editedCompany, setEditedCompany] = useState<Company>({...company});
   const [activeTab, setActiveTab] = useState("details");
   
-  // Refresh company data whenever tab changes
   useEffect(() => {
-    // Initial full refresh when component mounts or tab changes
-    refresh();
     const refreshedCompany = getCompanyById(company.id);
     if (refreshedCompany) {
-      // Only update the availableSlots part to preserve form edits
-      setEditedCompany(prev => ({
-        ...prev,
-        availableSlots: refreshedCompany.availableSlots || []
-      }));
+      console.log("CompanyDetails - Refreshed company on tab change:", refreshedCompany);
+      
+      if (activeTab === "details") {
+        setEditedCompany(prev => ({
+          ...prev,
+          availableSlots: refreshedCompany.availableSlots || []
+        }));
+      } else {
+        setEditedCompany(refreshedCompany);
+      }
     }
-  }, [company.id, getCompanyById, activeTab, refresh]);
+  }, [company.id, getCompanyById, activeTab]);
 
-  // Format time for display (convert "1930" to "19:30")
   const formatTimeForDisplay = (time: string) => {
-    // If the time contains a colon already, return it as is
     if (time.includes(':')) return time;
     
-    // For 3-digit format like "930", add a leading 0 to make "0930"
     let formattedTime = time.length === 3 ? `0${time}` : time;
     
-    // Add a colon before the last two digits: "0930" -> "09:30"
     return `${formattedTime.slice(0, -2)}:${formattedTime.slice(-2)}`;
   };
 
@@ -59,14 +56,13 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
 
   const handleSave = useCallback(() => {
     try {
-      // Create a copy of the edited company data to update
+      const currentCompany = getCompanyById(company.id);
+      
       const companyToUpdate = {
         ...editedCompany,
-        // Ensure we have the latest availableSlots
-        availableSlots: getCompanyById(company.id)?.availableSlots || editedCompany.availableSlots || []
+        availableSlots: currentCompany?.availableSlots || editedCompany.availableSlots || []
       };
 
-      // Call the update function
       updateCompany(companyToUpdate);
       
       toast({
@@ -74,11 +70,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
         description: "Company information has been saved successfully.",
       });
       
-      // Give time for data to be saved before closing
-      setTimeout(() => {
-        refresh();
-        onClose();
-      }, 500);
+      onClose();
     } catch (error) {
       console.error("Error saving company details:", error);
       toast({
@@ -87,12 +79,10 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
         variant: "destructive",
       });
     }
-  }, [editedCompany, company.id, getCompanyById, updateCompany, onClose, refresh]);
+  }, [editedCompany, company.id, getCompanyById, updateCompany, onClose]);
 
   const handleToggleAvailability = useCallback((slotId: string) => {
     if (toggleSlotAvailability(slotId)) {
-      // Update the company data after toggling
-      refresh();
       const refreshedCompany = getCompanyById(company.id);
       if (refreshedCompany) {
         setEditedCompany(prev => ({
@@ -101,7 +91,7 @@ const CompanyDetails = ({ company, onClose }: CompanyDetailsProps) => {
         }));
       }
     }
-  }, [toggleSlotAvailability, company.id, getCompanyById, refresh]);
+  }, [toggleSlotAvailability, company.id, getCompanyById]);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
