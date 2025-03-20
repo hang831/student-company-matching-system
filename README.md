@@ -1,6 +1,7 @@
 # Welcome to your Lovable project
 
 ## Project info
+Published website: https://student-company-connector-73.lovable.app/
 
 **URL**: https://lovable.dev/projects/ec450d2e-0220-4feb-8e11-6903912c067f
 
@@ -9,7 +10,6 @@
 There are several ways of editing your application.
 
 **Use Lovable**
-Published website: https://student-company-connector-73.lovable.app/
 
 Simply visit the [Lovable Project](https://lovable.dev/projects/ec450d2e-0220-4feb-8e11-6903912c067f) and start prompting.
 
